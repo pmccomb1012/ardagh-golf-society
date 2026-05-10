@@ -1740,6 +1740,18 @@ body.readonly-mode #loginScreen button{
   flex-wrap:wrap;
 }
 
+
+.live-sync-note{
+  border-left:5px solid #12b76a;
+  background:#ecfdf3;
+  color:#054f31;
+  border-radius:14px;
+  padding:10px 12px;
+  margin-top:10px;
+  font-size:.88rem;
+  font-weight:800;
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -2327,6 +2339,7 @@ body.readonly-mode #loginScreen button{
           <div class="permission-note">
             <strong>Cloud Sync:</strong><br>
             This version is connected to Supabase. Changes are saved to the shared cloud state so everyone sees the same data.
+            <div class="live-sync-note">Live Sync is enabled: devices check for new cloud updates automatically every few seconds.</div>
             <div class="cloud-actions" style="margin-top:10px">
               <button class="secondary admin-only-action" onclick="loadCloudState(true)">Reload Latest Cloud Data</button>
               <button class="secondary admin-only-action" onclick="testCloudConnection()">Test Cloud</button>
@@ -2468,6 +2481,8 @@ let cloudSaveTimer = null;
 let cloudReady = false;
 let cloudLoading = false;
 let pendingCloudSave = false;
+let lastCloudUpdatedAt = "";
+let liveSyncPausedUntil = 0;
 
 function setCloudStatus(status, text){
   const box = document.getElementById("cloudStatus");
@@ -2554,14 +2569,44 @@ function cleanStateForCloud(){
   return copy;
 }
 
+
+function pauseLivePull(seconds=4){
+  liveSyncPausedUntil = Date.now() + (seconds * 1000);
+}
+
+function isLivePullPaused(){
+  return Date.now() < liveSyncPausedUntil;
+}
+
+async function getCloudUpdatedAt(){
+  const rows = await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(CLOUD_STATE_KEY)}&select=updated_at`);
+  return rows && rows.length ? rows[0].updated_at : "";
+}
+
+async function livePullCloudState(){
+  if(!cloudReady || cloudLoading || pendingCloudSave || isLivePullPaused()) return;
+
+  try{
+    const cloudUpdatedAt = await getCloudUpdatedAt();
+    if(cloudUpdatedAt && cloudUpdatedAt !== lastCloudUpdatedAt){
+      await loadCloudState(false);
+      setCloudStatus("online", `Live updated ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"})}`);
+    }
+  }catch(error){
+    console.error("Live sync check failed", error);
+    setCloudStatus("error", "Live sync issue");
+  }
+}
+
 async function loadCloudState(showAlert=false){
   if(cloudLoading) return;
   cloudLoading = true;
   setCloudStatus("saving", "Loading cloud data...");
   try{
-    const rows = await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(CLOUD_STATE_KEY)}&select=value`);
+    const rows = await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(CLOUD_STATE_KEY)}&select=value,updated_at`);
     if(rows && rows.length && rows[0].value){
       state = rows[0].value;
+      lastCloudUpdatedAt = rows[0].updated_at || "";
       cloudReady = true;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       renderAll();
@@ -2597,13 +2642,16 @@ async function saveCloudState(showAlert=false){
       value:cleanStateForCloud(),
       updated_at:new Date().toISOString()
     };
-    await supabaseRequest("app_settings?on_conflict=key", {
+    const savedRows = await supabaseRequest("app_settings?on_conflict=key", {
       method:"POST",
       headers:{"Prefer":"resolution=merge-duplicates,return=representation"},
       body:JSON.stringify(payload)
     });
     cloudReady = true;
     pendingCloudSave = false;
+    if(savedRows && savedRows[0]?.updated_at) lastCloudUpdatedAt = savedRows[0].updated_at;
+    else lastCloudUpdatedAt = await getCloudUpdatedAt();
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     setCloudStatus("online", `Cloud synced ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"})}`);
     if(showAlert) alert("Current data saved to cloud.");
@@ -3045,6 +3093,7 @@ function selectedCourse(event){
 
 function save(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  pauseLivePull(5);
   queueCloudSave();
 }
 function load(){
@@ -6366,7 +6415,7 @@ async function initialiseCloudSync(){
     await loadCloudAuthConfig();
     await loadCloudState(false);
     if(pendingCloudSave) await saveCloudState(false);
-    setCloudStatus("online", "Cloud synced");
+    setCloudStatus("online", "Live sync ready");
   }catch(error){
     console.error(error);
     setCloudStatus("error", "Cloud connection failed");
@@ -6374,8 +6423,8 @@ async function initialiseCloudSync(){
 
   if(!window.cloudRefreshTimer){
     window.cloudRefreshTimer = setInterval(() => {
-      if(document.visibilityState === "visible" && !pendingCloudSave) loadCloudState(false);
-    }, 60000);
+      if(document.visibilityState === "visible") livePullCloudState();
+    }, 5000);
   }
 }
 
