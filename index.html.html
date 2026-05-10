@@ -2189,6 +2189,147 @@ body.readonly-mode #mobilescoring button{
   .score-stepper input{height:40px}
 }
 
+
+/* v38 event-only TV leaderboard + instant score sync */
+.tv-event-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
+  gap:18px;
+}
+.tv-board{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:22px;
+  overflow:hidden;
+}
+.tv-board h3{
+  margin:0;
+  padding:16px 18px;
+  background:rgba(255,255,255,.10);
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.tv-board-sub{
+  color:#d9e7ff;
+  padding:0 18px 12px;
+  margin-top:-8px;
+  font-size:.92rem;
+}
+.tv-leader-row{
+  grid-template-columns:64px 1fr 96px!important;
+}
+.tv-leader-row small{
+  color:#bfd5ff;
+  font-size:.86rem;
+}
+.tv-live-meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:0 0 18px;
+}
+.tv-live-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border-radius:999px;
+  padding:8px 12px;
+  background:rgba(18,183,106,.16);
+  border:1px solid rgba(18,183,106,.32);
+  color:#d1fadf;
+  font-weight:950;
+}
+.tv-live-pill:before{
+  content:"";
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#12b76a;
+}
+.instant-save-note{
+  border-left:5px solid #12b76a;
+  background:#ecfdf3;
+  color:#054f31;
+  border-radius:14px;
+  padding:10px 12px;
+  margin:10px 0;
+  font-weight:850;
+}
+@media(max-width:700px){
+  .tv-event-grid{grid-template-columns:1fr}
+}
+
+
+/* v39 mobile in-round leaderboard */
+.score-mode-switch{
+  display:flex;
+  gap:8px;
+  padding:0 12px 12px;
+  overflow:auto;
+}
+.score-mode-switch button{
+  flex:1;
+  min-width:140px;
+  border-radius:999px;
+  background:#fff;
+  color:#344054;
+  border:1px solid #d8dee9;
+  box-shadow:none;
+  padding:11px 12px;
+}
+.score-mode-switch button.active{
+  background:#155eef;
+  color:#fff;
+  border-color:#155eef;
+}
+.mobile-live-board{
+  padding:12px;
+  display:none;
+}
+.mobile-live-board.active{display:block}
+.mobile-board-card{
+  border:1px solid #e4e7ec;
+  border-radius:18px;
+  background:#fff;
+  overflow:hidden;
+  margin-bottom:12px;
+}
+.mobile-board-card h3{
+  margin:0;
+  padding:12px 14px;
+  background:#f8fafc;
+  border-bottom:1px solid #e4e7ec;
+  color:#06172c;
+  font-size:1rem;
+}
+.mobile-board-row{
+  display:grid;
+  grid-template-columns:42px 1fr 58px;
+  gap:8px;
+  align-items:center;
+  padding:10px 12px;
+  border-bottom:1px solid #edf0f5;
+}
+.mobile-board-row:last-child{border-bottom:0}
+.mobile-board-row strong{color:#06172c}
+.mobile-board-row small{display:block;color:#667085;margin-top:2px}
+.mobile-board-rank{
+  width:32px;
+  height:32px;
+  border-radius:10px;
+  background:#eef4ff;
+  color:#155eef;
+  font-weight:950;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.mobile-board-score{
+  font-size:1.15rem;
+  font-weight:950;
+  color:#06172c;
+  text-align:right;
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -2627,7 +2768,7 @@ body.readonly-mode #mobilescoring button{
         <div class="mobile-score-shell">
           <div class="card">
             <h2>📱 Live Mobile Scoring</h2>
-            <p class="small">Phone-friendly score entry. Scores save to the shared cloud and update the live leaderboard automatically.</p>
+            <p class="small">Phone-friendly score entry. Scores save instantly to the shared cloud and update the live event leaderboard automatically.</p><div class="instant-save-note">Instant save is enabled: every score change pushes to cloud without pressing Save.</div>
             <div class="mobile-score-status" id="mobileScoreStatus">Select a competition and player to start entering scores.</div>
             <div class="mobile-score-toolbar">
               <div>
@@ -3087,6 +3228,8 @@ async function livePullCloudState(){
     const cloudUpdatedAt = await getCloudUpdatedAt();
     if(cloudUpdatedAt && cloudUpdatedAt !== lastCloudUpdatedAt){
       await loadCloudState(false);
+      renderTvMode();
+      refreshMobileLeaderboardPanel();
       setCloudStatus("online", `Live updated ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"})}`);
     }
   }catch(error){
@@ -6329,6 +6472,83 @@ function renderScoreAppTop(title, subtitle){
   `;
 }
 
+
+function showScoringMode(mode){
+  document.querySelectorAll("[data-score-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.scoreMode === mode));
+  const scoring = $("mobileScoringPanel");
+  const leaderboard = $("mobileLeaderboardPanel");
+  if(scoring) scoring.style.display = mode === "score" ? "block" : "none";
+  if(leaderboard){
+    leaderboard.classList.toggle("active", mode === "leaderboard");
+    if(mode === "leaderboard") refreshMobileLeaderboardPanel();
+  }
+}
+
+function mobileLeaderboardRowsForCompetition(event, comp){
+  if(!event || !comp) return "";
+  if(comp.format === "singles"){
+    return event.entrants
+      .slice()
+      .sort(compareEntrants(event, comp))
+      .filter(entrant => playerStablefordTotal(event, comp, entrant) > 0)
+      .slice(0,10)
+      .map((entrant,index) => {
+        const total = playerStablefordTotal(event, comp, entrant);
+        const cb = countback(event, comp, entrant);
+        return `
+          <div class="mobile-board-row">
+            <div class="mobile-board-rank">${index+1}</div>
+            <div><strong>${esc(playerName(entrant.playerId))}</strong><small>B9 ${cb.back9} • B6 ${cb.back6} • B3 ${cb.back3}</small></div>
+            <div class="mobile-board-score">${total}</div>
+          </div>
+        `;
+      }).join("") || `<div class="mobile-board-row"><div></div><div><small>No scores yet.</small></div><div></div></div>`;
+  }
+
+  return teamRows(event, comp)
+    .filter(team => team.total > 0)
+    .slice(0,10)
+    .map((team,index) => `
+      <div class="mobile-board-row">
+        <div class="mobile-board-rank">${index+1}</div>
+        <div><strong>${esc(team.team)}</strong><small>${esc(team.counting.map(en => `${playerName(en.playerId)} ${playerStablefordTotal(event, comp, en)}`).join(" • "))}</small></div>
+        <div class="mobile-board-score">${team.total}</div>
+      </div>
+    `).join("") || `<div class="mobile-board-row"><div></div><div><small>No team scores yet.</small></div><div></div></div>`;
+}
+
+function renderMobileEventLeaderboard(){
+  const event = activeEvent();
+  if(!event) return `<div class="note">No active event.</div>`;
+
+  const boards = event.competitions
+    .filter(comp => comp.day !== "overall")
+    .map(comp => `
+      <div class="mobile-board-card">
+        <h3>${esc(comp.name)}</h3>
+        ${mobileLeaderboardRowsForCompetition(event, comp)}
+      </div>
+    `).join("");
+
+  const singlesComps = event.competitions.filter(comp => comp.format === "singles" && comp.day !== "overall");
+  const overallSingles = singlesComps.length > 1 ? `
+    <div class="mobile-board-card">
+      <h3>Overall Singles</h3>
+      ${event.entrants.slice().sort(compareCombinedEntrants(event, singlesComps)).filter(entrant => combinedPlayerCountback(event, singlesComps, entrant).total > 0).slice(0,10).map((entrant,index) => {
+        const cb = combinedPlayerCountback(event, singlesComps, entrant);
+        return `<div class="mobile-board-row"><div class="mobile-board-rank">${index+1}</div><div><strong>${esc(playerName(entrant.playerId))}</strong><small>${singlesComps.map(comp => `${comp.name}: ${playerStablefordTotal(event, comp, entrant)}`).join(" • ")}</small></div><div class="mobile-board-score">${cb.total}</div></div>`;
+      }).join("") || `<div class="mobile-board-row"><div></div><div><small>No overall scores yet.</small></div><div></div></div>`}
+    </div>
+  ` : "";
+
+  return `${boards}${overallSingles}`;
+}
+
+function refreshMobileLeaderboardPanel(){
+  const panel = $("mobileLeaderboardPanel");
+  if(panel) panel.innerHTML = renderMobileEventLeaderboard();
+}
+
 function renderGroupScoring(group){
   const event = activeEvent();
   const competition = competitionById(event, group.competitionId);
@@ -6336,20 +6556,27 @@ function renderGroupScoring(group){
 
   return `
     ${renderScoreAppTop(group.name, `${competition.name} • Score all players in this group`)}
-    <div class="score-card-pro">
-      <div class="score-card-head-pro">
-        <h3>${esc(group.name)}</h3>
-        <p>${esc(group.playerIds.map(playerName).join(" • "))}</p>
-      </div>
-      <div class="score-tabs-pro">
-        ${group.playerIds.map((pid,idx) => `<button class="${idx===0 ? "active" : ""}" onclick="showGroupPlayer('${pid}')">${esc(playerName(pid))}</button>`).join("")}
-      </div>
-      ${group.playerIds.map((pid,idx) => renderGroupPlayerScorePanel(event, competition, pid, idx===0)).join("")}
-      <div class="score-footer-actions">
-        <button class="green" onclick="saveCloudState(true)">Save Now</button>
-        <button class="secondary" onclick="submitGroupCards('${group.id}')">Submit Group</button>
+    <div class="score-mode-switch">
+      <button class="active" data-score-mode="score" onclick="showScoringMode('score')">Enter Scores</button>
+      <button data-score-mode="leaderboard" onclick="showScoringMode('leaderboard')">Live Leaderboard</button>
+    </div>
+    <div id="mobileScoringPanel">
+      <div class="score-card-pro">
+        <div class="score-card-head-pro">
+          <h3>${esc(group.name)}</h3>
+          <p>${esc(group.playerIds.map(playerName).join(" • "))}</p>
+        </div>
+        <div class="score-tabs-pro">
+          ${group.playerIds.map((pid,idx) => `<button class="${idx===0 ? "active" : ""}" onclick="showGroupPlayer('${pid}')">${esc(playerName(pid))}</button>`).join("")}
+        </div>
+        ${group.playerIds.map((pid,idx) => renderGroupPlayerScorePanel(event, competition, pid, idx===0)).join("")}
+        <div class="score-footer-actions">
+          <button class="green" onclick="saveCloudState(true)">Save Now</button>
+          <button class="secondary" onclick="submitGroupCards('${group.id}')">Submit Group</button>
+        </div>
       </div>
     </div>
+    <div id="mobileLeaderboardPanel" class="mobile-live-board">${renderMobileEventLeaderboard()}</div>
   `;
 }
 
@@ -6412,6 +6639,8 @@ function updateGroupScore(playerId, competitionId, holeIndex, value){
   if(totalEl) totalEl.textContent = playerStablefordTotal(event, competition, entrant);
   if(grossEl) grossEl.textContent = competition.inputType === "stroke" ? playerGrossTotal(competition, playerId) : "-";
 
+  refreshMobileLeaderboardPanel();
+  refreshMobileLeaderboardPanel();
   showScoreToast("Saved live");
 }
 
@@ -6460,6 +6689,15 @@ function renderMobileScoringSelectors(){
   }
 }
 
+
+function queueInstantScoreSave(){
+  pendingCloudSave = true;
+  clearTimeout(window.instantScoreSaveTimer);
+  window.instantScoreSaveTimer = setTimeout(() => {
+    saveCloudState(false);
+  }, 250);
+}
+
 function updateMobileScore(playerId, competitionId, holeIndex, value){
   const event = activeEvent();
   const competition = competitionById(event, competitionId);
@@ -6479,8 +6717,11 @@ function updateMobileScore(playerId, competitionId, holeIndex, value){
   score.updatedAt = new Date().toISOString();
   score.updatedBy = getCurrentUser()?.username || "mobile scorer";
 
-  save();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  pauseLivePull(3);
+  queueInstantScoreSave();
   updateMobileScoreSummary();
+  renderTvMode();
   showScoreToast("Saved live");
 }
 
@@ -6753,28 +6994,122 @@ function renderCheckin(){
 
 function renderTvMode(){
   if(!$("tvCombined")) return;
-  const stats = calculateStats().slice().sort((a,b)=>b.combinedPoints-a.combinedPoints).slice(0,8);
-  $("tvCombined").innerHTML = stats.map((s,i)=>`
-    <div class="tv-leader-row">
-      <div class="tv-rank">${i+1}</div>
-      <div>${esc(s.player.name)}</div>
-      <div>${s.combinedPoints}</div>
-    </div>
-  `).join("") || `<div class="note">No standings yet.</div>`;
-
   const event = activeEvent();
+
   if(!event){
-    $("tvEvent").innerHTML = `<div class="note">No active event.</div>`;
+    $("tvCombined").innerHTML = `<div class="note">No active event selected.</div>`;
+    if($("tvEvent")) $("tvEvent").innerHTML = "";
     return;
   }
-  $("tvEvent").innerHTML = event.competitions.slice(0,4).map(comp=>{
-    if(comp.format === "singles"){
-      const leader = event.entrants.slice().sort(compareEntrants(event, comp))[0];
-      return leader ? `<div class="tv-leader-row"><div class="tv-rank">•</div><div>${esc(comp.name)}<br><small>${esc(playerName(leader.playerId))}</small></div><div>${playerStablefordTotal(event, comp, leader)}</div></div>` : "";
+
+  const updated = new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const competitionBoards = event.competitions
+    .filter(comp => comp.day !== "overall")
+    .map(comp => {
+      if(comp.format === "singles"){
+        const rows = event.entrants
+          .slice()
+          .sort(compareEntrants(event, comp))
+          .filter(entrant => playerStablefordTotal(event, comp, entrant) > 0)
+          .slice(0,10)
+          .map((entrant,index) => {
+            const total = playerStablefordTotal(event, comp, entrant);
+            const cb = countback(event, comp, entrant);
+            return `
+              <div class="tv-leader-row">
+                <div class="tv-rank">${index+1}</div>
+                <div>${esc(playerName(entrant.playerId))}<br><small>B9 ${cb.back9} • B6 ${cb.back6} • B3 ${cb.back3}</small></div>
+                <div>${total}</div>
+              </div>
+            `;
+          }).join("");
+
+        return `
+          <div class="tv-board">
+            <h3>${esc(comp.name)}</h3>
+            <div class="tv-board-sub">Singles live leaderboard</div>
+            ${rows || `<div class="note">No scores entered yet.</div>`}
+          </div>
+        `;
+      }
+
+      const rows = teamRows(event, comp)
+        .filter(team => team.total > 0)
+        .slice(0,10)
+        .map((team,index) => `
+          <div class="tv-leader-row">
+            <div class="tv-rank">${index+1}</div>
+            <div>${esc(team.team)}<br><small>${esc(team.counting.map(en => `${playerName(en.playerId)} ${playerStablefordTotal(event, comp, en)}`).join(" • "))}</small></div>
+            <div>${team.total}</div>
+          </div>
+        `).join("");
+
+      return `
+        <div class="tv-board">
+          <h3>${esc(comp.name)}</h3>
+          <div class="tv-board-sub">${esc(comp.format)} live team leaderboard</div>
+          ${rows || `<div class="note">No team scores entered yet.</div>`}
+        </div>
+      `;
+    }).join("");
+
+  const overallSections = [];
+  const singlesComps = event.competitions.filter(comp => comp.format === "singles" && comp.day !== "overall");
+  if(singlesComps.length > 1){
+    const rows = event.entrants
+      .slice()
+      .sort(compareCombinedEntrants(event, singlesComps))
+      .filter(entrant => combinedPlayerCountback(event, singlesComps, entrant).total > 0)
+      .slice(0,10)
+      .map((entrant,index) => {
+        const cb = combinedPlayerCountback(event, singlesComps, entrant);
+        return `
+          <div class="tv-leader-row">
+            <div class="tv-rank">${index+1}</div>
+            <div>${esc(playerName(entrant.playerId))}<br><small>${singlesComps.map(comp => `${comp.name}: ${playerStablefordTotal(event, comp, entrant)}`).join(" • ")}</small></div>
+            <div>${cb.total}</div>
+          </div>
+        `;
+      }).join("");
+    overallSections.push(`
+      <div class="tv-board">
+        <h3>Overall Singles</h3>
+        <div class="tv-board-sub">Combined event singles leaderboard</div>
+        ${rows || `<div class="note">No overall singles scores yet.</div>`}
+      </div>
+    `);
+  }
+
+  ["doubles","trebles","custom"].forEach(format => {
+    const rowsData = overallTeamRowsForFormat(event, format);
+    if(rowsData.length){
+      const rows = rowsData.slice(0,10).map((team,index) => `
+        <div class="tv-leader-row">
+          <div class="tv-rank">${index+1}</div>
+          <div>${esc(team.team)}<br><small>${esc(team.players.map(en => playerName(en.playerId)).join(" • "))}</small></div>
+          <div>${team.total}</div>
+        </div>
+      `).join("");
+      overallSections.push(`
+        <div class="tv-board">
+          <h3>Overall ${format.charAt(0).toUpperCase()+format.slice(1)}</h3>
+          <div class="tv-board-sub">Combined event team leaderboard</div>
+          ${rows}
+        </div>
+      `);
     }
-    const team = teamRows(event, comp)[0];
-    return team ? `<div class="tv-leader-row"><div class="tv-rank">•</div><div>${esc(comp.name)}<br><small>${esc(team.team)}</small></div><div>${team.total}</div></div>` : "";
-  }).join("") || `<div class="note">No event scores yet.</div>`;
+  });
+
+  const header = `
+    <div class="tv-live-meta">
+      <span class="tv-live-pill">Live Event Leaderboard</span>
+      <span class="tv-live-pill">Updated ${updated}</span>
+      <span class="tv-live-pill">${esc(event.name)}</span>
+    </div>
+  `;
+
+  $("tvCombined").innerHTML = header + `<div class="tv-event-grid">${competitionBoards || `<div class="note">No competitions set up for this event.</div>`}</div>`;
+  if($("tvEvent")) $("tvEvent").innerHTML = overallSections.length ? `<h3>Overall Event Results</h3><div class="tv-event-grid">${overallSections.join("")}</div>` : "";
 }
 
 function renderStandings(){
@@ -7389,7 +7724,7 @@ async function initialiseCloudSync(){
   if(!window.cloudRefreshTimer){
     window.cloudRefreshTimer = setInterval(() => {
       if(document.visibilityState === "visible") livePullCloudState();
-    }, 5000);
+    }, 3000);
   }
 }
 
