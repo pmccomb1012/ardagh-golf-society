@@ -1752,6 +1752,128 @@ body.readonly-mode #loginScreen button{
   font-weight:800;
 }
 
+
+/* v35 live mobile scoring */
+.mobile-score-shell{
+  max-width:980px;
+  margin:0 auto;
+}
+.mobile-score-toolbar{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin:14px 0;
+}
+.mobile-score-card{
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(16,24,40,.08);
+  overflow:hidden;
+}
+.mobile-score-head{
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  color:#fff;
+  padding:18px;
+}
+.mobile-score-head h3{
+  color:#fff;
+  margin:0 0 4px;
+}
+.mobile-score-head p{
+  margin:0;
+  color:#d9e7ff;
+}
+.mobile-hole-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
+  gap:10px;
+  padding:16px;
+}
+.mobile-hole{
+  border:1px solid #d8dee9;
+  border-radius:16px;
+  background:#f8fafc;
+  padding:10px;
+}
+.mobile-hole strong{
+  display:block;
+  color:var(--navy);
+  font-size:.88rem;
+  margin-bottom:4px;
+}
+.mobile-hole small{
+  display:block;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.mobile-hole input{
+  height:48px;
+  text-align:center;
+  font-size:1.25rem;
+  font-weight:950;
+  padding:6px;
+}
+.mobile-score-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;
+  padding:0 16px 16px;
+}
+.mobile-score-total{
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+  padding:12px;
+}
+.mobile-score-total span{
+  display:block;
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:950;
+  text-transform:uppercase;
+}
+.mobile-score-total strong{
+  display:block;
+  color:var(--navy);
+  font-size:1.45rem;
+}
+.mobile-score-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:0 16px 16px;
+}
+.mobile-score-status{
+  border-left:5px solid #12b76a;
+  background:#ecfdf3;
+  color:#054f31;
+  border-radius:14px;
+  padding:10px 12px;
+  margin:12px 0;
+  font-weight:850;
+}
+body.readonly-mode #mobilescoring input,
+body.readonly-mode #mobilescoring select,
+body.readonly-mode #mobilescoring button{
+  pointer-events:auto!important;
+  opacity:1!important;
+}
+@media(max-width:650px){
+  .mobile-hole-grid{
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    padding:12px;
+  }
+  .mobile-hole{
+    padding:8px;
+  }
+  .mobile-hole input{
+    height:44px;
+    font-size:1.1rem;
+  }
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -2147,7 +2269,29 @@ body.readonly-mode #loginScreen button{
         </div>
       </section>
 
-      <section id="results" class="view">
+      
+      <section id="mobilescoring" class="view">
+        <div class="mobile-score-shell">
+          <div class="card">
+            <h2>📱 Live Mobile Scoring</h2>
+            <p class="small">Phone-friendly score entry. Scores save to the shared cloud and update the live leaderboard automatically.</p>
+            <div class="mobile-score-status" id="mobileScoreStatus">Select a competition and player to start entering scores.</div>
+            <div class="mobile-score-toolbar">
+              <div>
+                <label>Competition</label>
+                <select id="mobileScoreCompetition" onchange="renderMobileScoring()"></select>
+              </div>
+              <div>
+                <label>Player</label>
+                <select id="mobileScorePlayer" onchange="renderMobileScoring()"></select>
+              </div>
+            </div>
+            <div id="mobileScoreArea"></div>
+          </div>
+        </div>
+      </section>
+
+<section id="results" class="view">
         <div class="card">
           <h2>📊 Event Results</h2>
           <div class="form-grid">
@@ -2714,7 +2858,7 @@ function isCurrentAdmin(){
 }
 
 const VIEW_ONLY_ALLOWED = new Set([
-  "dashboard","results","standings","grossnet","selection","seasonstats","tv","money","sidecomps","reports","players"
+  "dashboard","mobilescoring","results","standings","grossnet","selection","seasonstats","tv","money","sidecomps","reports","players"
 ]);
 
 function applyRolePermissions(){
@@ -3006,6 +3150,7 @@ const VIEWS = [
   ["events","Events"],
   ["setup","Event Setup"],
   ["scoring","Score Entry"],
+  ["mobilescoring","Live Scoring"],
   ["results","Results"],
   ["handicaps","Handicaps"],
   ["standings","Standings"],
@@ -4374,6 +4519,7 @@ function renderSelectors(){
   if($("autoTeamComp")) $("autoTeamComp").innerHTML = event ? autoPrizeCompetitionOptions(event, "team") : "";
   renderPrizeLockControls();
   renderPrizeMatrixSelectors();
+  renderMobileScoringSelectors();
 
   $("contextLine").textContent = `${season?.name || "No season"}${event ? " • " + event.name : ""}`;
 }
@@ -5669,6 +5815,196 @@ function renderEventOverallResults(event){
       These combine matching competitions across the event, for example Day 1 + Day 2 singles or Day 1 + Day 2 doubles/trebles.
     </div>
     <div class="overall-results-grid">${sections.join("")}</div>
+  `;
+}
+
+
+function mobileCompetitionOptions(event){
+  if(!event) return "";
+  return event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)} (${esc(comp.format)})</option>`).join("");
+}
+
+function mobilePlayerOptions(event){
+  if(!event) return "";
+  return event.entrants
+    .slice()
+    .sort((a,b) => playerName(a.playerId).localeCompare(playerName(b.playerId)))
+    .map(en => `<option value="${en.playerId}">${esc(playerName(en.playerId))}</option>`)
+    .join("");
+}
+
+function selectedMobileCompetition(){
+  const event = activeEvent();
+  return competitionById(event, $("mobileScoreCompetition")?.value) || event?.competitions[0] || null;
+}
+
+function selectedMobileEntrant(){
+  const event = activeEvent();
+  const playerId = $("mobileScorePlayer")?.value || event?.entrants[0]?.playerId;
+  return event?.entrants.find(en => en.playerId === playerId) || event?.entrants[0] || null;
+}
+
+function renderMobileScoringSelectors(){
+  const event = activeEvent();
+  if(!event) return;
+
+  const compSelect = $("mobileScoreCompetition");
+  const playerSelect = $("mobileScorePlayer");
+
+  if(compSelect){
+    const current = compSelect.value;
+    compSelect.innerHTML = mobileCompetitionOptions(event);
+    compSelect.value = current || event.competitions[0]?.id || "";
+  }
+
+  if(playerSelect){
+    const current = playerSelect.value;
+    playerSelect.innerHTML = mobilePlayerOptions(event);
+    playerSelect.value = current || event.entrants[0]?.playerId || "";
+  }
+}
+
+function updateMobileScore(playerId, competitionId, holeIndex, value){
+  const event = activeEvent();
+  const competition = competitionById(event, competitionId);
+  const entrant = event?.entrants.find(en => en.playerId === playerId);
+  if(!event || !competition || !entrant) return;
+
+  const score = scoreObject(competition, playerId);
+
+  if(competition.inputType === "stroke"){
+    score.gross[holeIndex] = value === "" ? "" : n(value);
+  }else if(competition.inputType === "stableford"){
+    score.stableford[holeIndex] = value === "" ? "" : n(value);
+  }else{
+    score.total = value === "" ? "" : n(value);
+  }
+
+  score.updatedAt = new Date().toISOString();
+  score.updatedBy = getCurrentUser()?.username || "mobile scorer";
+
+  save();
+  updateMobileScoreSummary();
+}
+
+function updateMobileScoreSummary(){
+  const event = activeEvent();
+  const competition = selectedMobileCompetition();
+  const entrant = selectedMobileEntrant();
+  if(!event || !competition || !entrant) return;
+
+  const total = playerStablefordTotal(event, competition, entrant);
+  const gross = competition.inputType === "stroke" ? playerGrossTotal(competition, entrant.playerId) : "-";
+
+  if($("mobileScoreTotal")) $("mobileScoreTotal").textContent = total;
+  if($("mobileScoreGross")) $("mobileScoreGross").textContent = gross;
+  if($("mobileScoreStatus")) $("mobileScoreStatus").textContent = `Saving live for ${playerName(entrant.playerId)} - ${competition.name}`;
+}
+
+function submitMobileScorecard(){
+  const event = activeEvent();
+  const competition = selectedMobileCompetition();
+  const entrant = selectedMobileEntrant();
+  if(!event || !competition || !entrant) return;
+
+  const score = scoreObject(competition, entrant.playerId);
+  score.submitted = true;
+  score.submittedAt = new Date().toISOString();
+  score.submittedBy = getCurrentUser()?.username || "mobile scorer";
+  save();
+  saveCloudState(true);
+  renderMobileScoring();
+  alert("Scorecard submitted and saved live.");
+}
+
+function unlockMobileScorecard(){
+  if(!isCurrentAdmin()) return alert("Only an admin can unlock a submitted scorecard.");
+  const competition = selectedMobileCompetition();
+  const entrant = selectedMobileEntrant();
+  if(!competition || !entrant) return;
+  const score = scoreObject(competition, entrant.playerId);
+  score.submitted = false;
+  save();
+  renderMobileScoring();
+}
+
+function renderMobileScoring(){
+  renderMobileScoringSelectors();
+
+  const event = activeEvent();
+  const competition = selectedMobileCompetition();
+  const entrant = selectedMobileEntrant();
+  const area = $("mobileScoreArea");
+
+  if(!area) return;
+
+  if(!event || !competition || !entrant){
+    area.innerHTML = `<div class="note">Set up an event, competition and players first.</div>`;
+    return;
+  }
+
+  const score = scoreObject(competition, entrant.playerId);
+  const course = courseForCompetition(event, competition);
+  const submitted = !!score.submitted;
+
+  if(competition.inputType === "total"){
+    area.innerHTML = `
+      <div class="mobile-score-card">
+        <div class="mobile-score-head">
+          <h3>${esc(playerName(entrant.playerId))}</h3>
+          <p>${esc(competition.name)} - total score entry</p>
+        </div>
+        <div style="padding:16px">
+          <label>Total Stableford Points</label>
+          <input type="number" value="${score.total || ""}" ${submitted ? "disabled" : ""} oninput="updateMobileScore('${entrant.playerId}','${competition.id}',0,this.value)">
+        </div>
+        <div class="mobile-score-summary">
+          <div class="mobile-score-total"><span>Total</span><strong id="mobileScoreTotal">${playerStablefordTotal(event, competition, entrant)}</strong></div>
+          <div class="mobile-score-total"><span>Status</span><strong>${submitted ? "Submitted" : "Draft"}</strong></div>
+        </div>
+        <div class="mobile-score-actions">
+          <button class="green" onclick="submitMobileScorecard()">Submit Card</button>
+          ${submitted && isCurrentAdmin() ? `<button class="secondary" onclick="unlockMobileScorecard()">Unlock</button>` : ""}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const inputs = Array.from({length:HOLES}, (_,i) => {
+    const value = competition.inputType === "stroke" ? (score.gross[i] || "") : (score.stableford[i] || "");
+    const label = competition.inputType === "stroke" ? "Gross" : "Points";
+    const calculated = competition.inputType === "stroke"
+      ? `Pts: ${pointsArray(event, competition, entrant)[i] || 0}`
+      : `Par ${course.par[i]} / SI ${course.si[i]}`;
+
+    return `
+      <div class="mobile-hole">
+        <strong>Hole ${i+1}</strong>
+        <small>${label} • ${calculated}</small>
+        <input inputmode="numeric" type="number" value="${value}" ${submitted ? "disabled" : ""} oninput="updateMobileScore('${entrant.playerId}','${competition.id}',${i},this.value)">
+      </div>
+    `;
+  }).join("");
+
+  area.innerHTML = `
+    <div class="mobile-score-card">
+      <div class="mobile-score-head">
+        <h3>${esc(playerName(entrant.playerId))}</h3>
+        <p>${esc(competition.name)} • ${competition.inputType === "stroke" ? "Enter gross strokes" : "Enter Stableford points"}${submitted ? " • Submitted" : ""}</p>
+      </div>
+      <div class="mobile-hole-grid">${inputs}</div>
+      <div class="mobile-score-summary">
+        <div class="mobile-score-total"><span>Stableford Total</span><strong id="mobileScoreTotal">${playerStablefordTotal(event, competition, entrant)}</strong></div>
+        <div class="mobile-score-total"><span>Gross Total</span><strong id="mobileScoreGross">${competition.inputType === "stroke" ? playerGrossTotal(competition, entrant.playerId) : "-"}</strong></div>
+        <div class="mobile-score-total"><span>Status</span><strong>${submitted ? "Submitted" : "Draft"}</strong></div>
+      </div>
+      <div class="mobile-score-actions">
+        <button class="green" onclick="submitMobileScorecard()">Submit Card</button>
+        <button class="secondary" onclick="saveCloudState(true)">Save Live Now</button>
+        ${submitted && isCurrentAdmin() ? `<button class="secondary" onclick="unlockMobileScorecard()">Unlock</button>` : ""}
+      </div>
+    </div>
   `;
 }
 
