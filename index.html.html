@@ -2498,6 +2498,226 @@ body.readonly-mode #fourballs .admin-only-action{
   }
 }
 
+
+/* v44 Professional readable TV leaderboard */
+.tv-mode-pro{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top right, rgba(214,173,50,.24), transparent 28rem),
+    radial-gradient(circle at 12% 18%, rgba(21,94,239,.22), transparent 26rem),
+    linear-gradient(135deg,#051326,#081f3d 52%,#0c2c55);
+  color:#fff;
+  padding:28px;
+}
+.tv-hero{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:22px;
+  align-items:center;
+  margin-bottom:24px;
+}
+.tv-hero h1{
+  color:#fff;
+  font-size:clamp(2rem,3.1vw,4rem);
+  line-height:1;
+  margin:0;
+  letter-spacing:-.04em;
+}
+.tv-hero p{
+  margin:8px 0 0;
+  color:#d9e7ff;
+  font-size:clamp(1rem,1.25vw,1.45rem);
+}
+.tv-hero-meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.tv-meta-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border-radius:999px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff;
+  font-weight:950;
+  white-space:nowrap;
+}
+.tv-meta-pill.live{
+  background:rgba(18,183,106,.18);
+  border-color:rgba(18,183,106,.42);
+  color:#d1fadf;
+}
+.tv-meta-pill.live:before{
+  content:"";
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#12b76a;
+  box-shadow:0 0 18px rgba(18,183,106,.8);
+}
+.tv-showcase{
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:24px;
+  align-items:start;
+}
+.tv-section{
+  display:grid;
+  gap:18px;
+}
+.tv-section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 18px;
+  border-radius:22px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
+}
+.tv-section-title h2{
+  color:#fff;
+  font-size:clamp(1.25rem,1.7vw,2rem);
+  margin:0;
+}
+.tv-section-title span{
+  color:#d9e7ff;
+  font-weight:900;
+}
+.tv-card-pro{
+  overflow:hidden;
+  border-radius:28px;
+  background:rgba(255,255,255,.96);
+  color:#07172d;
+  box-shadow:0 28px 80px rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.34);
+}
+.tv-card-head{
+  padding:18px 22px;
+  background:linear-gradient(135deg,#fff,#eef4ff);
+  border-bottom:1px solid #dbe5f4;
+}
+.tv-card-head h3{
+  color:#07172d;
+  font-size:clamp(1.25rem,1.55vw,1.85rem);
+  margin:0;
+}
+.tv-card-head p{
+  margin:6px 0 0;
+  color:#667085;
+  font-size:clamp(.9rem,1vw,1.1rem);
+  font-weight:800;
+}
+.tv-row-pro{
+  display:grid;
+  grid-template-columns:64px 1fr 92px;
+  gap:16px;
+  align-items:center;
+  padding:16px 22px;
+  border-bottom:1px solid #edf1f7;
+}
+.tv-row-pro:last-child{
+  border-bottom:0;
+}
+.tv-rank-pro{
+  width:48px;
+  height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:16px;
+  background:#eef4ff;
+  color:#155eef;
+  font-size:1.18rem;
+  font-weight:1000;
+}
+.tv-row-pro:nth-child(1) .tv-rank-pro{
+  background:linear-gradient(135deg,#d6ad32,#ffe58a);
+  color:#07172d;
+}
+.tv-row-pro:nth-child(2) .tv-rank-pro{
+  background:linear-gradient(135deg,#c9d2df,#f5f7fb);
+  color:#07172d;
+}
+.tv-row-pro:nth-child(3) .tv-rank-pro{
+  background:linear-gradient(135deg,#b76e2f,#f0b37e);
+  color:#07172d;
+}
+.tv-name-pro{
+  min-width:0;
+}
+.tv-name-pro strong{
+  display:block;
+  color:#07172d;
+  font-size:clamp(1rem,1.18vw,1.35rem);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tv-name-pro small{
+  display:block;
+  color:#667085;
+  font-size:clamp(.78rem,.9vw,1rem);
+  margin-top:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tv-score-pro{
+  text-align:right;
+  font-size:clamp(1.8rem,2.4vw,3rem);
+  font-weight:1000;
+  color:#07172d;
+  letter-spacing:-.04em;
+}
+.tv-empty-pro{
+  padding:28px;
+  color:#667085;
+  font-size:1.1rem;
+  font-weight:850;
+}
+.tv-overall-strip{
+  margin-top:24px;
+  display:grid;
+  gap:18px;
+}
+.tv-overall-strip .tv-card-pro{
+  background:rgba(255,255,255,.93);
+}
+.tv-overall-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
+  gap:20px;
+}
+@media(max-width:1180px){
+  .tv-showcase{
+    grid-template-columns:1fr;
+  }
+  .tv-hero{
+    grid-template-columns:1fr;
+  }
+  .tv-hero-meta{
+    justify-content:flex-start;
+  }
+}
+@media(max-width:720px){
+  .tv-mode-pro{
+    padding:16px;
+  }
+  .tv-row-pro{
+    grid-template-columns:52px 1fr 72px;
+    padding:13px 14px;
+    gap:10px;
+  }
+  .tv-rank-pro{
+    width:42px;
+    height:42px;
+  }
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -7315,36 +7535,44 @@ function renderTvMode(){
     return;
   }
 
-  const updated = new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const updated = new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"});
   const singlesComps = event.competitions.filter(comp => comp.format === "singles" && comp.day !== "overall");
   const teamComps = event.competitions.filter(comp => comp.format !== "singles" && comp.day !== "overall");
+
+  const buildRows = (rows, type) => rows.slice(0,7).map((row,index) => `
+    <div class="tv-row-pro">
+      <div class="tv-rank-pro">${index+1}</div>
+      <div class="tv-name-pro">
+        <strong>${row.name}</strong>
+        <small>${row.sub || ""}</small>
+      </div>
+      <div class="tv-score-pro">${row.score}</div>
+    </div>
+  `).join("");
 
   const singlesBoards = singlesComps.map(comp => {
     const rows = event.entrants
       .slice()
       .sort(compareEntrants(event, comp))
       .filter(entrant => playerStablefordTotal(event, comp, entrant) > 0)
-      .slice(0,10)
-      .map((entrant,index) => {
+      .slice(0,7)
+      .map(entrant => {
         const total = playerStablefordTotal(event, comp, entrant);
         const cb = countback(event, comp, entrant);
-        return `
-          <div class="tv-leader-row">
-            <div class="tv-rank">${index+1}</div>
-            <div>
-              <div class="tv-leader-name">${esc(playerName(entrant.playerId))}</div>
-              <small>B9 ${cb.back9} • B6 ${cb.back6} • B3 ${cb.back3}</small>
-            </div>
-            <div class="tv-leader-score">${total}</div>
-          </div>
-        `;
-      }).join("");
+        return {
+          name:esc(playerName(entrant.playerId)),
+          sub:`Back 9 ${cb.back9} • Back 6 ${cb.back6} • Back 3 ${cb.back3}`,
+          score:total
+        };
+      });
 
     return `
-      <div class="tv-board">
-        <h3>${esc(comp.name)}</h3>
-        <div class="tv-board-sub">Singles live leaderboard</div>
-        ${rows || `<div class="tv-empty">No singles scores entered yet.</div>`}
+      <div class="tv-card-pro">
+        <div class="tv-card-head">
+          <h3>${esc(comp.name)}</h3>
+          <p>Singles leaderboard • Top ${Math.min(rows.length,7)}</p>
+        </div>
+        ${rows.length ? buildRows(rows, "singles") : `<div class="tv-empty-pro">No singles scores entered yet.</div>`}
       </div>
     `;
   }).join("");
@@ -7353,23 +7581,20 @@ function renderTvMode(){
     const source = scoringSourceCompetition(event, comp);
     const rows = teamRows(event, comp)
       .filter(team => team.team !== "No Team" && team.total > 0)
-      .slice(0,10)
-      .map((team,index) => `
-        <div class="tv-leader-row">
-          <div class="tv-rank">${index+1}</div>
-          <div>
-            <div class="tv-leader-name">${esc(team.team)}</div>
-            <small>${esc(team.counting.map(en => `${playerName(en.playerId)} ${playerStablefordTotal(event, comp, en)}`).join(" • "))}</small>
-          </div>
-          <div class="tv-leader-score">${team.total}</div>
-        </div>
-      `).join("");
+      .slice(0,7)
+      .map(team => ({
+        name:esc(team.team),
+        sub:esc(team.counting.map(en => `${playerName(en.playerId)} ${playerStablefordTotal(event, comp, en)}`).join(" • ")),
+        score:team.total
+      }));
 
     return `
-      <div class="tv-board">
-        <h3>${esc(comp.name)}</h3>
-        <div class="tv-board-sub">${esc(comp.format)} leaderboard • pulling from ${esc(source?.name || "Singles")}</div>
-        ${rows || `<div class="tv-empty">No teams/scores available yet.</div>`}
+      <div class="tv-card-pro">
+        <div class="tv-card-head">
+          <h3>${esc(comp.name)}</h3>
+          <p>${esc(comp.format)} leaderboard • from ${esc(source?.name || "Singles")}</p>
+        </div>
+        ${rows.length ? buildRows(rows, "team") : `<div class="tv-empty-pro">No team results available yet.</div>`}
       </div>
     `;
   }).join("");
@@ -7381,78 +7606,92 @@ function renderTvMode(){
       .slice()
       .sort(compareCombinedEntrants(event, singlesComps))
       .filter(entrant => combinedPlayerCountback(event, singlesComps, entrant).total > 0)
-      .slice(0,10)
-      .map((entrant,index) => {
+      .slice(0,7)
+      .map(entrant => {
         const cb = combinedPlayerCountback(event, singlesComps, entrant);
-        return `
-          <div class="tv-leader-row">
-            <div class="tv-rank">${index+1}</div>
-            <div>
-              <div class="tv-leader-name">${esc(playerName(entrant.playerId))}</div>
-              <small>${singlesComps.map(comp => `${comp.name}: ${playerStablefordTotal(event, comp, entrant)}`).join(" • ")}</small>
-            </div>
-            <div class="tv-leader-score">${cb.total}</div>
-          </div>
-        `;
-      }).join("");
+        return {
+          name:esc(playerName(entrant.playerId)),
+          sub:singlesComps.map(comp => `${comp.name}: ${playerStablefordTotal(event, comp, entrant)}`).join(" • "),
+          score:cb.total
+        };
+      });
+
     overallSections.push(`
-      <div class="tv-board">
-        <h3>Overall Singles</h3>
-        <div class="tv-board-sub">Combined event singles leaderboard</div>
-        ${rows || `<div class="tv-empty">No overall singles scores yet.</div>`}
+      <div class="tv-card-pro">
+        <div class="tv-card-head">
+          <h3>Overall Singles</h3>
+          <p>Combined event singles</p>
+        </div>
+        ${rows.length ? buildRows(rows, "overall") : `<div class="tv-empty-pro">No overall singles scores yet.</div>`}
       </div>
     `);
   }
 
   ["doubles","trebles","custom"].forEach(format => {
-    const rowsData = overallTeamRowsForFormat(event, format).filter(team => team.team !== "No Team");
+    const rowsData = overallTeamRowsForFormat(event, format).filter(team => team.team !== "No Team").slice(0,7);
     if(rowsData.length){
-      const rows = rowsData.slice(0,10).map((team,index) => `
-        <div class="tv-leader-row">
-          <div class="tv-rank">${index+1}</div>
-          <div>
-            <div class="tv-leader-name">${esc(team.team)}</div>
-            <small>${esc(team.players.map(en => playerName(en.playerId)).join(" • "))}</small>
-          </div>
-          <div class="tv-leader-score">${team.total}</div>
-        </div>
-      `).join("");
+      const rows = rowsData.map(team => ({
+        name:esc(team.team),
+        sub:esc(team.players.map(en => playerName(en.playerId)).join(" • ")),
+        score:team.total
+      }));
       overallSections.push(`
-        <div class="tv-board">
-          <h3>Overall ${format.charAt(0).toUpperCase()+format.slice(1)}</h3>
-          <div class="tv-board-sub">Combined event team leaderboard</div>
-          ${rows}
+        <div class="tv-card-pro">
+          <div class="tv-card-head">
+            <h3>Overall ${format.charAt(0).toUpperCase()+format.slice(1)}</h3>
+            <p>Combined event team results</p>
+          </div>
+          ${buildRows(rows, "overall-team")}
         </div>
       `);
     }
   });
 
-  const header = `
-    <div class="tv-live-meta">
-      <span class="tv-live-pill">Live Event Leaderboard</span>
-      <span class="tv-live-pill">${esc(event.name)}</span>
-      <span class="tv-live-pill">Updated ${updated}</span>
+  $("tvCombined").innerHTML = `
+    <div class="tv-mode-pro">
+      <div class="tv-hero">
+        <div>
+          <h1>${esc(event.name)}</h1>
+          <p>${esc(event.venue || "Live Event Leaderboard")}</p>
+        </div>
+        <div class="tv-hero-meta">
+          <span class="tv-meta-pill live">Live</span>
+          <span class="tv-meta-pill">Updated ${updated}</span>
+          <span class="tv-meta-pill">${singlesComps.length + teamComps.length} leaderboard${singlesComps.length + teamComps.length === 1 ? "" : "s"}</span>
+        </div>
+      </div>
+
+      <div class="tv-showcase">
+        <section class="tv-section">
+          <div class="tv-section-title">
+            <h2>Singles</h2>
+            <span>${singlesComps.length ? "Player leaderboard" : "No singles"}</span>
+          </div>
+          ${singlesBoards || `<div class="tv-empty-pro">No singles competitions for this event.</div>`}
+        </section>
+
+        <section class="tv-section">
+          <div class="tv-section-title">
+            <h2>Team Events</h2>
+            <span>${teamComps.length ? "Doubles / Trebles" : "No team event"}</span>
+          </div>
+          ${teamBoards || `<div class="tv-empty-pro">No doubles or trebles competitions for this event.</div>`}
+        </section>
+      </div>
+
+      ${overallSections.length ? `
+        <div class="tv-overall-strip">
+          <div class="tv-section-title">
+            <h2>Overall Event Results</h2>
+            <span>Combined</span>
+          </div>
+          <div class="tv-overall-grid">${overallSections.join("")}</div>
+        </div>
+      ` : ""}
     </div>
   `;
 
-  $("tvCombined").innerHTML = header + `
-    <div class="tv-split-layout">
-      <div>
-        <div class="tv-column-title"><h2>Singles</h2><span>${singlesComps.length} board${singlesComps.length === 1 ? "" : "s"}</span></div>
-        <div class="tv-stack">${singlesBoards || `<div class="tv-empty">No singles competitions for this event.</div>`}</div>
-      </div>
-      <div>
-        <div class="tv-column-title"><h2>Team Events</h2><span>${teamComps.length} board${teamComps.length === 1 ? "" : "s"}</span></div>
-        <div class="tv-stack">${teamBoards || `<div class="tv-empty">No doubles/trebles competitions for this event.</div>`}</div>
-      </div>
-    </div>
-  `;
-
-  if($("tvEvent")){
-    $("tvEvent").innerHTML = overallSections.length
-      ? `<div class="tv-event-overall"><div class="tv-column-title"><h2>Overall Event Results</h2><span>Combined</span></div><div class="tv-event-grid">${overallSections.join("")}</div></div>`
-      : "";
-  }
+  if($("tvEvent")) $("tvEvent").innerHTML = "";
 }
 
 function renderStandings(){
