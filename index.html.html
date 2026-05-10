@@ -1874,6 +1874,67 @@ body.readonly-mode #mobilescoring button{
   }
 }
 
+
+/* v36 fourball QR scoring */
+.fourball-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.fourball-card{
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  padding:14px;
+}
+.fourball-card h3{
+  margin:0 0 8px;
+}
+.qr-box{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.qr-box img{
+  width:128px;
+  height:128px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  padding:6px;
+}
+.group-score-tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:12px 0;
+}
+.group-score-tab{
+  background:#fff;
+  color:var(--navy);
+  border:1px solid var(--line);
+  box-shadow:none;
+}
+.group-score-tab.active{
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  color:#fff;
+}
+.group-player-panel{display:none}
+.group-player-panel.active{display:block}
+.copy-link-box{
+  font-size:.78rem;
+  color:var(--muted);
+  word-break:break-all;
+  background:#f8fafc;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:8px;
+  margin-top:8px;
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -2270,7 +2331,45 @@ body.readonly-mode #mobilescoring button{
       </section>
 
       
-      <section id="mobilescoring" class="view">
+      
+      <section id="fourballs" class="view">
+        <div class="card">
+          <h2>🏌️ Fourball QR Scoring</h2>
+          <p class="small">Create groups for the event. Each fourball gets a QR code/link that opens live scoring for only those players.</p>
+
+          <div class="form-grid">
+            <div>
+              <label>Group Name</label>
+              <input id="fourballName" placeholder="e.g. Fourball 1">
+            </div>
+            <div>
+              <label>Competition</label>
+              <select id="fourballCompetition"></select>
+            </div>
+            <div>
+              <label>Player 1</label>
+              <select id="fourballPlayer1"></select>
+            </div>
+            <div>
+              <label>Player 2</label>
+              <select id="fourballPlayer2"></select>
+            </div>
+            <div>
+              <label>Player 3</label>
+              <select id="fourballPlayer3"></select>
+            </div>
+            <div>
+              <label>Player 4</label>
+              <select id="fourballPlayer4"></select>
+            </div>
+            <button class="green" onclick="addFourballGroup()">Create Fourball</button>
+          </div>
+
+          <div id="fourballList" class="fourball-grid"></div>
+        </div>
+      </section>
+
+<section id="mobilescoring" class="view">
         <div class="mobile-score-shell">
           <div class="card">
             <h2>📱 Live Mobile Scoring</h2>
@@ -2858,7 +2957,7 @@ function isCurrentAdmin(){
 }
 
 const VIEW_ONLY_ALLOWED = new Set([
-  "dashboard","mobilescoring","results","standings","grossnet","selection","seasonstats","tv","money","sidecomps","reports","players"
+  "dashboard","fourballs","mobilescoring","results","standings","grossnet","selection","seasonstats","tv","money","sidecomps","reports","players"
 ]);
 
 function applyRolePermissions(){
@@ -3150,6 +3249,7 @@ const VIEWS = [
   ["events","Events"],
   ["setup","Event Setup"],
   ["scoring","Score Entry"],
+  ["fourballs","Fourballs"],
   ["mobilescoring","Live Scoring"],
   ["results","Results"],
   ["handicaps","Handicaps"],
@@ -4520,6 +4620,7 @@ function renderSelectors(){
   renderPrizeLockControls();
   renderPrizeMatrixSelectors();
   renderMobileScoringSelectors();
+  renderFourballSetup();
 
   $("contextLine").textContent = `${season?.name || "No season"}${event ? " • " + event.name : ""}`;
 }
@@ -5819,6 +5920,190 @@ function renderEventOverallResults(event){
 }
 
 
+
+function ensureFourballs(event){
+  if(!event) return;
+  event.fourballs = event.fourballs || [];
+}
+
+function fourballPlayerOptions(event){
+  if(!event) return "";
+  return [`<option value="">Select player</option>`, ...event.entrants
+    .slice()
+    .sort((a,b)=>playerName(a.playerId).localeCompare(playerName(b.playerId)))
+    .map(en => `<option value="${en.playerId}">${esc(playerName(en.playerId))}</option>`)].join("");
+}
+
+function fourballCompetitionOptions(event){
+  if(!event) return "";
+  return event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)}</option>`).join("");
+}
+
+function fourballScoringUrl(groupId){
+  const url = new URL(window.location.href);
+  url.searchParams.set("scoreGroup", groupId);
+  return url.toString();
+}
+
+function qrUrlForText(text){
+  return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(text)}`;
+}
+
+function renderFourballSetup(){
+  const event = activeEvent();
+  if(!event) return;
+  ensureFourballs(event);
+
+  if($("fourballCompetition")) $("fourballCompetition").innerHTML = fourballCompetitionOptions(event);
+  ["fourballPlayer1","fourballPlayer2","fourballPlayer3","fourballPlayer4"].forEach(id => {
+    const el = $(id);
+    if(el) el.innerHTML = fourballPlayerOptions(event);
+  });
+
+  const list = $("fourballList");
+  if(!list) return;
+
+  list.innerHTML = event.fourballs.map(group => {
+    const link = fourballScoringUrl(group.id);
+    const comp = competitionById(event, group.competitionId);
+    return `
+      <div class="fourball-card">
+        <h3>${esc(group.name)}</h3>
+        <p class="small">${esc(comp?.name || "Competition")}<br>${esc(group.playerIds.map(playerName).join(", "))}</p>
+        <div class="qr-box">
+          <img src="${qrUrlForText(link)}" alt="QR code for ${esc(group.name)}">
+          <div>
+            <button class="secondary" onclick="copyFourballLink('${group.id}')">Copy Link</button>
+            <button class="red" onclick="deleteFourballGroup('${group.id}')">Delete</button>
+            <div class="copy-link-box">${esc(link)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("") || `<div class="note">No fourballs created yet.</div>`;
+}
+
+function addFourballGroup(){
+  const event = activeEvent();
+  if(!event) return alert("Select an event first.");
+  ensureFourballs(event);
+
+  const playerIds = ["fourballPlayer1","fourballPlayer2","fourballPlayer3","fourballPlayer4"]
+    .map(id => $(id)?.value)
+    .filter(Boolean);
+
+  const uniqueIds = Array.from(new Set(playerIds));
+  if(uniqueIds.length < 1) return alert("Select at least one player.");
+  if(uniqueIds.length !== playerIds.length) return alert("A player has been selected more than once.");
+
+  const competitionId = $("fourballCompetition")?.value;
+  if(!competitionId) return alert("Select a competition.");
+
+  event.fourballs.push({
+    id:uid("fourball"),
+    name:$("fourballName").value.trim() || `Fourball ${event.fourballs.length + 1}`,
+    competitionId,
+    playerIds:uniqueIds,
+    createdAt:new Date().toISOString()
+  });
+
+  $("fourballName").value = "";
+  save();
+  renderFourballSetup();
+}
+
+function deleteFourballGroup(groupId){
+  const event = activeEvent();
+  if(!event) return;
+  if(!confirm("Delete this fourball?")) return;
+  event.fourballs = (event.fourballs || []).filter(g => g.id !== groupId);
+  save();
+  renderFourballSetup();
+}
+
+function copyFourballLink(groupId){
+  const link = fourballScoringUrl(groupId);
+  navigator.clipboard?.writeText(link).then(() => alert("Fourball scoring link copied."));
+}
+
+function activeScoreGroup(){
+  const params = new URLSearchParams(window.location.search);
+  const groupId = params.get("scoreGroup");
+  const event = activeEvent();
+  ensureFourballs(event);
+  return event?.fourballs?.find(g => g.id === groupId) || null;
+}
+
+function renderGroupScoring(group){
+  const event = activeEvent();
+  const competition = competitionById(event, group.competitionId);
+  if(!event || !competition) return `<div class="note">This scoring link is not valid for the active event.</div>`;
+
+  return `
+    <div class="mobile-score-card">
+      <div class="mobile-score-head">
+        <h3>${esc(group.name)}</h3>
+        <p>${esc(competition.name)} • Score all players in this group</p>
+      </div>
+      <div class="group-score-tabs">
+        ${group.playerIds.map((pid,idx) => `<button class="group-score-tab ${idx===0 ? "active" : ""}" onclick="showGroupPlayer('${pid}')">${esc(playerName(pid))}</button>`).join("")}
+      </div>
+      ${group.playerIds.map((pid,idx) => renderGroupPlayerScorePanel(event, competition, pid, idx===0)).join("")}
+    </div>
+  `;
+}
+
+function showGroupPlayer(playerId){
+  document.querySelectorAll(".group-player-panel").forEach(el => el.classList.toggle("active", el.dataset.playerId === playerId));
+  document.querySelectorAll(".group-score-tab").forEach(btn => btn.classList.toggle("active", btn.textContent.trim() === playerName(playerId)));
+}
+
+function renderGroupPlayerScorePanel(event, competition, playerId, active=false){
+  const entrant = event.entrants.find(en => en.playerId === playerId);
+  if(!entrant) return "";
+  const score = scoreObject(competition, playerId);
+  const course = courseForCompetition(event, competition);
+
+  const inputs = Array.from({length:HOLES}, (_,i) => {
+    const value = competition.inputType === "stroke" ? (score.gross[i] || "") : (score.stableford[i] || "");
+    const label = competition.inputType === "stroke" ? "Gross" : "Points";
+    const calculated = competition.inputType === "stroke"
+      ? `Pts: ${pointsArray(event, competition, entrant)[i] || 0}`
+      : `Par ${course.par[i]} / SI ${course.si[i]}`;
+
+    return `
+      <div class="mobile-hole">
+        <strong>Hole ${i+1}</strong>
+        <small>${label} • ${calculated}</small>
+        <input inputmode="numeric" type="number" value="${value}" oninput="updateGroupScore('${playerId}','${competition.id}',${i},this.value)">
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="group-player-panel ${active ? "active" : ""}" data-player-id="${playerId}">
+      <div style="padding:0 16px 10px"><h3>${esc(playerName(playerId))}</h3></div>
+      <div class="mobile-hole-grid">${inputs}</div>
+      <div class="mobile-score-summary">
+        <div class="mobile-score-total"><span>Stableford</span><strong id="groupTotal_${playerId}">${playerStablefordTotal(event, competition, entrant)}</strong></div>
+        <div class="mobile-score-total"><span>Gross</span><strong id="groupGross_${playerId}">${competition.inputType === "stroke" ? playerGrossTotal(competition, playerId) : "-"}</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function updateGroupScore(playerId, competitionId, holeIndex, value){
+  updateMobileScore(playerId, competitionId, holeIndex, value);
+  const event = activeEvent();
+  const competition = competitionById(event, competitionId);
+  const entrant = event?.entrants.find(en => en.playerId === playerId);
+  if(!event || !competition || !entrant) return;
+  const totalEl = $(`groupTotal_${playerId}`);
+  const grossEl = $(`groupGross_${playerId}`);
+  if(totalEl) totalEl.textContent = playerStablefordTotal(event, competition, entrant);
+  if(grossEl) grossEl.textContent = competition.inputType === "stroke" ? playerGrossTotal(competition, playerId) : "-";
+}
+
 function mobileCompetitionOptions(event){
   if(!event) return "";
   return event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)} (${esc(comp.format)})</option>`).join("");
@@ -5929,6 +6214,15 @@ function unlockMobileScorecard(){
 }
 
 function renderMobileScoring(){
+  const group = activeScoreGroup();
+  if(group){
+    const area = $("mobileScoreArea");
+    if(area) area.innerHTML = renderGroupScoring(group);
+    const status = $("mobileScoreStatus");
+    if(status) status.textContent = `Fourball scoring link active: ${group.name}`;
+    return;
+  }
+
   renderMobileScoringSelectors();
 
   const event = activeEvent();
