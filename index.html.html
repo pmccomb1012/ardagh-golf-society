@@ -2499,160 +2499,168 @@ body.readonly-mode #fourballs .admin-only-action{
 }
 
 
-/* v44 Professional readable TV leaderboard */
+/* v45 Professional full-screen TV leaderboard - spacious readable layout */
 .tv-mode-pro{
   min-height:100vh;
+  width:100%;
   background:
-    radial-gradient(circle at top right, rgba(214,173,50,.24), transparent 28rem),
-    radial-gradient(circle at 12% 18%, rgba(21,94,239,.22), transparent 26rem),
-    linear-gradient(135deg,#051326,#081f3d 52%,#0c2c55);
+    radial-gradient(circle at 88% 8%, rgba(214,173,50,.24), transparent 30rem),
+    radial-gradient(circle at 10% 14%, rgba(21,94,239,.22), transparent 28rem),
+    linear-gradient(135deg,#051326 0%,#081f3d 52%,#0c2c55 100%);
   color:#fff;
-  padding:28px;
+  padding:clamp(28px,3vw,54px);
 }
 .tv-hero{
   display:grid;
-  grid-template-columns:1fr auto;
-  gap:22px;
-  align-items:center;
-  margin-bottom:24px;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:30px;
+  align-items:end;
+  margin-bottom:clamp(26px,2.8vw,46px);
+  padding-bottom:clamp(18px,1.8vw,30px);
+  border-bottom:1px solid rgba(255,255,255,.18);
 }
 .tv-hero h1{
   color:#fff;
-  font-size:clamp(2rem,3.1vw,4rem);
-  line-height:1;
+  font-size:clamp(2.8rem,4.8vw,6.6rem);
+  line-height:.92;
   margin:0;
-  letter-spacing:-.04em;
+  letter-spacing:-.055em;
+  max-width:18ch;
 }
 .tv-hero p{
-  margin:8px 0 0;
+  margin:14px 0 0;
   color:#d9e7ff;
-  font-size:clamp(1rem,1.25vw,1.45rem);
+  font-size:clamp(1.25rem,1.55vw,2rem);
+  font-weight:800;
 }
 .tv-hero-meta{
   display:flex;
-  gap:10px;
+  gap:12px;
   flex-wrap:wrap;
   justify-content:flex-end;
+  max-width:520px;
 }
 .tv-meta-pill{
   display:inline-flex;
   align-items:center;
-  gap:8px;
+  gap:9px;
   border-radius:999px;
-  padding:10px 14px;
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.18);
+  padding:13px 18px;
+  background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.22);
   color:#fff;
   font-weight:950;
+  font-size:clamp(.95rem,1vw,1.2rem);
   white-space:nowrap;
 }
 .tv-meta-pill.live{
   background:rgba(18,183,106,.18);
-  border-color:rgba(18,183,106,.42);
+  border-color:rgba(18,183,106,.46);
   color:#d1fadf;
 }
 .tv-meta-pill.live:before{
   content:"";
-  width:10px;
-  height:10px;
+  width:12px;
+  height:12px;
   border-radius:50%;
   background:#12b76a;
-  box-shadow:0 0 18px rgba(18,183,106,.8);
+  box-shadow:0 0 20px rgba(18,183,106,.9);
 }
 .tv-showcase{
   display:grid;
-  grid-template-columns:1.05fr .95fr;
-  gap:24px;
+  grid-template-columns:1fr;
+  gap:clamp(28px,3vw,46px);
   align-items:start;
 }
 .tv-section{
   display:grid;
-  gap:18px;
+  gap:clamp(18px,1.7vw,28px);
 }
 .tv-section-title{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:14px 18px;
-  border-radius:22px;
-  background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.18);
+  gap:18px;
+  padding:clamp(18px,1.6vw,26px) clamp(22px,2vw,34px);
+  border-radius:28px;
+  background:rgba(255,255,255,.11);
+  border:1px solid rgba(255,255,255,.20);
+  box-shadow:0 16px 44px rgba(0,0,0,.16);
 }
 .tv-section-title h2{
   color:#fff;
-  font-size:clamp(1.25rem,1.7vw,2rem);
+  font-size:clamp(1.8rem,2.6vw,3.3rem);
+  line-height:1;
   margin:0;
+  letter-spacing:-.035em;
 }
 .tv-section-title span{
   color:#d9e7ff;
-  font-weight:900;
+  font-weight:950;
+  font-size:clamp(1rem,1.15vw,1.35rem);
+  white-space:nowrap;
+}
+.tv-section-board-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,620px),1fr));
+  gap:clamp(22px,2vw,34px);
 }
 .tv-card-pro{
   overflow:hidden;
-  border-radius:28px;
-  background:rgba(255,255,255,.96);
+  border-radius:32px;
+  background:rgba(255,255,255,.98);
   color:#07172d;
-  box-shadow:0 28px 80px rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.34);
+  box-shadow:0 30px 90px rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.38);
 }
 .tv-card-head{
-  padding:18px 22px;
-  background:linear-gradient(135deg,#fff,#eef4ff);
+  padding:clamp(22px,2vw,34px) clamp(26px,2.3vw,40px);
+  background:linear-gradient(135deg,#fff 0%,#eef4ff 100%);
   border-bottom:1px solid #dbe5f4;
 }
 .tv-card-head h3{
   color:#07172d;
-  font-size:clamp(1.25rem,1.55vw,1.85rem);
+  font-size:clamp(1.65rem,2vw,2.75rem);
+  line-height:1.05;
   margin:0;
+  letter-spacing:-.035em;
 }
 .tv-card-head p{
-  margin:6px 0 0;
+  margin:10px 0 0;
   color:#667085;
-  font-size:clamp(.9rem,1vw,1.1rem);
-  font-weight:800;
+  font-size:clamp(1.05rem,1.15vw,1.45rem);
+  font-weight:850;
 }
 .tv-row-pro{
   display:grid;
-  grid-template-columns:64px 1fr 92px;
-  gap:16px;
+  grid-template-columns:86px minmax(0,1fr) 140px;
+  gap:24px;
   align-items:center;
-  padding:16px 22px;
+  padding:clamp(21px,1.9vw,32px) clamp(26px,2.3vw,40px);
   border-bottom:1px solid #edf1f7;
 }
-.tv-row-pro:last-child{
-  border-bottom:0;
-}
+.tv-row-pro:last-child{border-bottom:0}
 .tv-rank-pro{
-  width:48px;
-  height:48px;
+  width:66px;
+  height:66px;
   display:flex;
   align-items:center;
   justify-content:center;
-  border-radius:16px;
+  border-radius:22px;
   background:#eef4ff;
   color:#155eef;
-  font-size:1.18rem;
+  font-size:clamp(1.4rem,1.45vw,1.9rem);
   font-weight:1000;
 }
-.tv-row-pro:nth-child(1) .tv-rank-pro{
-  background:linear-gradient(135deg,#d6ad32,#ffe58a);
-  color:#07172d;
-}
-.tv-row-pro:nth-child(2) .tv-rank-pro{
-  background:linear-gradient(135deg,#c9d2df,#f5f7fb);
-  color:#07172d;
-}
-.tv-row-pro:nth-child(3) .tv-rank-pro{
-  background:linear-gradient(135deg,#b76e2f,#f0b37e);
-  color:#07172d;
-}
-.tv-name-pro{
-  min-width:0;
-}
+.tv-row-pro:nth-child(1) .tv-rank-pro{background:linear-gradient(135deg,#d6ad32,#ffe58a);color:#07172d}
+.tv-row-pro:nth-child(2) .tv-rank-pro{background:linear-gradient(135deg,#c9d2df,#f5f7fb);color:#07172d}
+.tv-row-pro:nth-child(3) .tv-rank-pro{background:linear-gradient(135deg,#b76e2f,#f0b37e);color:#07172d}
+.tv-name-pro{min-width:0}
 .tv-name-pro strong{
   display:block;
   color:#07172d;
-  font-size:clamp(1rem,1.18vw,1.35rem);
+  font-size:clamp(1.55rem,1.85vw,2.55rem);
+  line-height:1.08;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -2660,62 +2668,52 @@ body.readonly-mode #fourballs .admin-only-action{
 .tv-name-pro small{
   display:block;
   color:#667085;
-  font-size:clamp(.78rem,.9vw,1rem);
-  margin-top:4px;
+  font-size:clamp(1rem,1.05vw,1.32rem);
+  margin-top:8px;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  font-weight:800;
 }
 .tv-score-pro{
   text-align:right;
-  font-size:clamp(1.8rem,2.4vw,3rem);
+  font-size:clamp(2.6rem,3.4vw,4.6rem);
+  line-height:.9;
   font-weight:1000;
   color:#07172d;
-  letter-spacing:-.04em;
+  letter-spacing:-.055em;
 }
 .tv-empty-pro{
-  padding:28px;
+  padding:34px 40px;
   color:#667085;
-  font-size:1.1rem;
+  font-size:1.35rem;
   font-weight:850;
 }
 .tv-overall-strip{
-  margin-top:24px;
+  margin-top:clamp(32px,3vw,52px);
   display:grid;
-  gap:18px;
+  gap:clamp(20px,2vw,34px);
 }
-.tv-overall-strip .tv-card-pro{
-  background:rgba(255,255,255,.93);
-}
+.tv-overall-strip .tv-card-pro{background:rgba(255,255,255,.97)}
 .tv-overall-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
-  gap:20px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,620px),1fr));
+  gap:clamp(22px,2vw,34px);
+}
+@media(min-width:1500px){
+  .tv-section-board-grid,
+  .tv-overall-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:1180px){
-  .tv-showcase{
-    grid-template-columns:1fr;
-  }
-  .tv-hero{
-    grid-template-columns:1fr;
-  }
-  .tv-hero-meta{
-    justify-content:flex-start;
-  }
+  .tv-hero{grid-template-columns:1fr;align-items:start}
+  .tv-hero-meta{justify-content:flex-start;max-width:none}
 }
 @media(max-width:720px){
-  .tv-mode-pro{
-    padding:16px;
-  }
-  .tv-row-pro{
-    grid-template-columns:52px 1fr 72px;
-    padding:13px 14px;
-    gap:10px;
-  }
-  .tv-rank-pro{
-    width:42px;
-    height:42px;
-  }
+  .tv-mode-pro{padding:18px}
+  .tv-section-title{display:block}
+  .tv-section-title span{display:block;margin-top:8px}
+  .tv-row-pro{grid-template-columns:58px minmax(0,1fr) 86px;gap:12px;padding:16px}
+  .tv-rank-pro{width:48px;height:48px;border-radius:16px}
 }
 
 </style>
@@ -7539,7 +7537,7 @@ function renderTvMode(){
   const singlesComps = event.competitions.filter(comp => comp.format === "singles" && comp.day !== "overall");
   const teamComps = event.competitions.filter(comp => comp.format !== "singles" && comp.day !== "overall");
 
-  const buildRows = (rows, type) => rows.slice(0,7).map((row,index) => `
+  const buildRows = (rows, type) => rows.slice(0,5).map((row,index) => `
     <div class="tv-row-pro">
       <div class="tv-rank-pro">${index+1}</div>
       <div class="tv-name-pro">
@@ -7555,7 +7553,7 @@ function renderTvMode(){
       .slice()
       .sort(compareEntrants(event, comp))
       .filter(entrant => playerStablefordTotal(event, comp, entrant) > 0)
-      .slice(0,7)
+      .slice(0,5)
       .map(entrant => {
         const total = playerStablefordTotal(event, comp, entrant);
         const cb = countback(event, comp, entrant);
@@ -7570,7 +7568,7 @@ function renderTvMode(){
       <div class="tv-card-pro">
         <div class="tv-card-head">
           <h3>${esc(comp.name)}</h3>
-          <p>Singles leaderboard • Top ${Math.min(rows.length,7)}</p>
+          <p>Singles leaderboard • Top ${Math.min(rows.length,5)}</p>
         </div>
         ${rows.length ? buildRows(rows, "singles") : `<div class="tv-empty-pro">No singles scores entered yet.</div>`}
       </div>
@@ -7581,7 +7579,7 @@ function renderTvMode(){
     const source = scoringSourceCompetition(event, comp);
     const rows = teamRows(event, comp)
       .filter(team => team.team !== "No Team" && team.total > 0)
-      .slice(0,7)
+      .slice(0,5)
       .map(team => ({
         name:esc(team.team),
         sub:esc(team.counting.map(en => `${playerName(en.playerId)} ${playerStablefordTotal(event, comp, en)}`).join(" • ")),
@@ -7606,7 +7604,7 @@ function renderTvMode(){
       .slice()
       .sort(compareCombinedEntrants(event, singlesComps))
       .filter(entrant => combinedPlayerCountback(event, singlesComps, entrant).total > 0)
-      .slice(0,7)
+      .slice(0,5)
       .map(entrant => {
         const cb = combinedPlayerCountback(event, singlesComps, entrant);
         return {
@@ -7628,7 +7626,7 @@ function renderTvMode(){
   }
 
   ["doubles","trebles","custom"].forEach(format => {
-    const rowsData = overallTeamRowsForFormat(event, format).filter(team => team.team !== "No Team").slice(0,7);
+    const rowsData = overallTeamRowsForFormat(event, format).filter(team => team.team !== "No Team").slice(0,5);
     if(rowsData.length){
       const rows = rowsData.map(team => ({
         name:esc(team.team),
@@ -7667,7 +7665,7 @@ function renderTvMode(){
             <h2>Singles</h2>
             <span>${singlesComps.length ? "Player leaderboard" : "No singles"}</span>
           </div>
-          ${singlesBoards || `<div class="tv-empty-pro">No singles competitions for this event.</div>`}
+          <div class="tv-section-board-grid">${singlesBoards || `<div class="tv-empty-pro">No singles competitions for this event.</div>`}</div>
         </section>
 
         <section class="tv-section">
@@ -7675,7 +7673,7 @@ function renderTvMode(){
             <h2>Team Events</h2>
             <span>${teamComps.length ? "Doubles / Trebles" : "No team event"}</span>
           </div>
-          ${teamBoards || `<div class="tv-empty-pro">No doubles or trebles competitions for this event.</div>`}
+          <div class="tv-section-board-grid">${teamBoards || `<div class="tv-empty-pro">No doubles or trebles competitions for this event.</div>`}</div>
         </section>
       </div>
 
