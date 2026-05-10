@@ -2352,6 +2352,43 @@ body.readonly-mode #fourballs .admin-only-action{
   opacity:.55!important;
 }
 
+
+/* v41 team competitions use linked singles scores */
+.linked-score-badge{
+  display:inline-flex;
+  border-radius:999px;
+  padding:5px 9px;
+  background:#ecfdf3;
+  color:#067647;
+  font-size:.74rem;
+  font-weight:950;
+}
+.team-source-note{
+  border-left:5px solid #12b76a;
+  background:#ecfdf3;
+  color:#054f31;
+  border-radius:14px;
+  padding:10px 12px;
+  margin:10px 0;
+  font-weight:850;
+}
+
+
+/* v42 corrected linked team scoring */
+.linked-team-notice{
+  border-left:5px solid #12b76a;
+  background:#ecfdf3;
+  color:#054f31;
+  border-radius:14px;
+  padding:12px 14px;
+  margin:12px 0;
+  font-weight:850;
+}
+.linked-team-notice select{
+  margin-top:8px;
+  max-width:360px;
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -3815,7 +3852,9 @@ function competitionById(event, competitionId){
 }
 function activeScoreCompetition(){
   const event = activeEvent();
-  return competitionById(event, $("scoreCompetition").value) || event?.competitions[0] || null;
+  const selected = competitionById(event, $("scoreCompetition")?.value);
+  if(selected && selected.format === "singles") return selected;
+  return event?.competitions.find(comp => comp.format === "singles") || null;
 }
 function activeResultCompetition(){
   const event = activeEvent();
@@ -3958,15 +3997,24 @@ function addCompetition(){
   if(!name) return alert("Enter competition name.");
   const teamSize = Math.max(1, n($("teamSize").value) || 1);
   const counting = Math.max(1, Math.min(n($("countingScores").value) || 1, teamSize));
+  const format = $("compFormat").value;
+  const day = $("compDay").value;
+  const source = format === "singles" ? null : (
+    event.competitions.find(comp => comp.format === "singles" && String(comp.day) === String(day)) ||
+    event.competitions.find(comp => comp.format === "singles") ||
+    null
+  );
+
   event.competitions.push({
     id: uid("competition"),
     name,
-    day: $("compDay").value,
+    day,
     inputType: $("compInput").value,
-    format: $("compFormat").value,
+    format,
     teamSize,
     countingScores: counting,
     scores: {},
+    sourceCompetitionId: source?.id || "",
     _teams: []
   });
   $("compName").value = "";
@@ -4103,6 +4151,86 @@ function deletePrize(prizeId){
   renderAll();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+function isTeamCompetition(competition){
+  return competition && competition.format && competition.format !== "singles";
+}
+
+function eventForCompetition(competition){
+  const season = activeSeason();
+  return season?.events.find(event => event.competitions.some(comp => comp.id === competition?.id)) || activeEvent();
+}
+
+function scoringSourceCompetition(event, competition){
+  if(!event || !competition) return competition;
+  if(!isTeamCompetition(competition)) return competition;
+
+  if(competition.sourceCompetitionId){
+    const linked = competitionById(event, competition.sourceCompetitionId);
+    if(linked && linked.format === "singles") return linked;
+  }
+
+  const sameDaySingles = event.competitions.find(comp => comp.format === "singles" && String(comp.day) === String(competition.day));
+  return sameDaySingles || event.competitions.find(comp => comp.format === "singles") || competition;
+}
+
+function sourceCompetitionForTeam(event, competition){
+  return scoringSourceCompetition(event, competition);
+}
+
+function ensureTeamSourceLinks(event){
+  if(!event) return;
+  event.competitions.forEach(comp => {
+    if(isTeamCompetition(comp)){
+      const source = scoringSourceCompetition(event, comp);
+      if(source && source.id !== comp.id) comp.sourceCompetitionId = source.id;
+    }
+  });
+}
+
+function sourceCompetitionOptions(event, selectedId=""){
+  if(!event) return "";
+  return event.competitions
+    .filter(comp => comp.format === "singles")
+    .map(comp => `<option value="${comp.id}" ${comp.id === selectedId ? "selected" : ""}>${esc(comp.name)}</option>`)
+    .join("");
+}
+
+function updateTeamSourceCompetition(competitionId, sourceCompetitionId){
+  const event = activeEvent();
+  const comp = competitionById(event, competitionId);
+  if(!comp) return;
+  comp.sourceCompetitionId = sourceCompetitionId;
+  save();
+  renderAll();
+}
+
+function teamSourceControl(event, comp){
+  if(!isTeamCompetition(comp)) return "";
+  const source = scoringSourceCompetition(event, comp);
+  return `
+    <div class="linked-team-notice">
+      <strong>${esc(comp.name)} pulls player scores from:</strong><br>
+      <select onchange="updateTeamSourceCompetition('${comp.id}', this.value)">
+        ${sourceCompetitionOptions(event, source?.id || comp.sourceCompetitionId)}
+      </select>
+      <div class="small">Only enter player scores once in the linked singles competition. This team event uses those same scores to calculate doubles/trebles results.</div>
+    </div>
+  `;
+}
+
+
 function scoreObject(competition, playerId){
   if(!competition.scores[playerId]){
     competition.scores[playerId] = {gross:blankScores(), stableford:blankScores(), total:"", team:""};
@@ -4131,13 +4259,16 @@ function entrantFor(event, playerId){
   return event.entrants.find(e => e.playerId === playerId);
 }
 function pointsArray(event, competition, entrant){
-  const score = scoreObject(competition, entrant.playerId);
-  const course = courseForCompetition(event, competition);
-  if(competition.inputType === "total"){
+  const sourceCompetition = scoringSourceCompetition(event, competition);
+  const score = scoreObject(sourceCompetition, entrant.playerId);
+  const course = courseForCompetition(event, sourceCompetition);
+
+  if(sourceCompetition.inputType === "total"){
     return Array.from({length:HOLES}, (_,i) => i === 0 ? n(score.total) : 0);
   }
+
   return Array.from({length:HOLES}, (_,i) => {
-    if(competition.inputType === "stableford") return n(score.stableford[i]);
+    if(sourceCompetition.inputType === "stableford") return n(score.stableford[i]);
     const shots = strokesReceived(entrant.handicap, course.si[i]);
     return stablefordFromGross(score.gross[i], course.par[i], shots);
   });
@@ -4146,7 +4277,10 @@ function playerStablefordTotal(event, competition, entrant){
   return pointsArray(event, competition, entrant).reduce((sum, value) => sum + n(value), 0);
 }
 function playerGrossTotal(competition, playerId){
-  return scoreObject(competition, playerId).gross.reduce((sum, value) => sum + n(value), 0);
+  const event = eventForCompetition(competition);
+  const sourceCompetition = scoringSourceCompetition(event, competition);
+  const score = scoreObject(sourceCompetition, playerId);
+  return score.gross.reduce((sum,value)=>sum+n(value),0);
 }
 function countback(event, competition, entrant){
   const points = pointsArray(event, competition, entrant);
@@ -4169,8 +4303,7 @@ function compareEntrants(event, competition){
 function teamRows(event, competition){
   const grouped = {};
   event.entrants.forEach(entrant => {
-    const score = scoreObject(competition, entrant.playerId);
-    const team = score.team || "No Team";
+    const team = scoreObject(competition, entrant.playerId).team || "No Team";
     if(!grouped[team]) grouped[team] = [];
     grouped[team].push(entrant);
   });
@@ -4187,24 +4320,23 @@ function teamRows(event, competition){
 }
 
 function updateScore(playerId, hole, value){
-  const event = activeEvent();
   const competition = activeScoreCompetition();
-  if(!event || !competition) return;
+  if(!competition || competition.format !== "singles") return;
   const score = scoreObject(competition, playerId);
-  if(competition.inputType === "stroke") score.gross[hole] = value;
-  else if(competition.inputType === "stableford") score.stableford[hole] = value;
-  else score.total = value;
+  if(competition.inputType === "stroke") score.gross[hole] = value === "" ? "" : n(value);
+  if(competition.inputType === "stableford") score.stableford[hole] = value === "" ? "" : n(value);
+  if(competition.inputType === "total") score.total = value === "" ? "" : n(value);
   save();
   renderScoreEntry();
   renderResults();
-  renderDashboard();
   renderStandings();
 }
 function updateTeam(playerId, value){
-  const competition = activeScoreCompetition();
+  const competition = selectedTeamSetupCompetition() || activeScoreCompetition();
   if(!competition) return;
   scoreObject(competition, playerId).team = value.trim();
   save();
+  renderTeamSetup();
   renderResults();
   renderStandings();
 }
@@ -4962,8 +5094,8 @@ async function confirmEventImport(){
 
   const day1Singles = {id:uid("competition"), name:"Day 1 Singles", day:"1", inputType:"stableford", format:"singles", teamSize:1, countingScores:1, scores:{}, _teams:[]};
   const day2Singles = {id:uid("competition"), name:"Day 2 Singles", day:"2", inputType:"stableford", format:"singles", teamSize:1, countingScores:1, scores:{}, _teams:[]};
-  const day1Trebles = {id:uid("competition"), name:"Day 1 Trebles", day:"1", inputType:"stableford", format:"trebles", teamSize:n(data.PLAYERS_PER_TEAM)||3, countingScores:n(data.COUNTING_SCORES)||2, scores:{}, _teams:data.teamNames.slice()};
-  const day2Trebles = {id:uid("competition"), name:"Day 2 Trebles", day:"2", inputType:"stableford", format:"trebles", teamSize:n(data.PLAYERS_PER_TEAM)||3, countingScores:n(data.COUNTING_SCORES)||2, scores:{}, _teams:data.teamNames.slice()};
+  const day1Trebles = {id:uid("competition"), name:"Day 1 Trebles", day:"1", inputType:"stableford", format:"trebles", teamSize:n(data.PLAYERS_PER_TEAM)||3, countingScores:n(data.COUNTING_SCORES)||2, scores:{}, sourceCompetitionId:day1Singles.id, _teams:data.teamNames.slice()};
+  const day2Trebles = {id:uid("competition"), name:"Day 2 Trebles", day:"2", inputType:"stableford", format:"trebles", teamSize:n(data.PLAYERS_PER_TEAM)||3, countingScores:n(data.COUNTING_SCORES)||2, scores:{}, sourceCompetitionId:day2Singles.id, _teams:data.teamNames.slice()};
 
   data.players.forEach(importPlayer => {
     const player = playerMap[importPlayer.id];
@@ -5030,10 +5162,13 @@ function renderSelectors(){
   if($("entrantPlayer")) $("entrantPlayer").onchange = syncEntrantHandicapFromPlayer;
   syncEntrantHandicapFromPlayer();
 
-  const compOptions = event ? event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)}</option>`).join("") : "";
-  $("scoreCompetition").innerHTML = compOptions;
-  $("resultCompetition").innerHTML = compOptions;
-  $("prizeCompetition").innerHTML = compOptions;
+  const allCompOptions = event ? event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)}</option>`).join("") : "";
+  const scoringCompOptions = event ? event.competitions.filter(comp => comp.format === "singles").map(comp => `<option value="${comp.id}">${esc(comp.name)}</option>`).join("") : "";
+
+  if($("scoreCompetition")) $("scoreCompetition").innerHTML = scoringCompOptions;
+  if($("resultCompetition")) $("resultCompetition").innerHTML = allCompOptions;
+  if($("prizeCompetition")) $("prizeCompetition").innerHTML = allCompOptions;
+
   if($("teamSetupCompetition")) $("teamSetupCompetition").innerHTML = event ? teamCompetitionOptions(event) : "";
   if($("autoSinglesComp")) $("autoSinglesComp").innerHTML = event ? autoPrizeCompetitionOptions(event, "singles") : "";
   if($("autoTeamComp")) $("autoTeamComp").innerHTML = event ? autoPrizeCompetitionOptions(event, "team") : "";
@@ -5395,8 +5530,9 @@ function renderTeamSetup(){
   const area = $("teamSetupArea");
   if(!event || !select || !area) return;
 
-  const options = teamCompetitionOptions(event);
-  select.innerHTML = options;
+  const current = select.value;
+  select.innerHTML = teamCompetitionOptions(event);
+  if(current && event.competitions.some(comp => comp.id === current && comp.format !== "singles")) select.value = current;
 
   const competition = selectedTeamSetupCompetition();
   if(!competition){
@@ -5424,6 +5560,7 @@ function renderTeamSetup(){
   const teamOptions = [`<option value="">Unassigned</option>`, ...teamNames.map(name => `<option value="${esc(name)}">${esc(name)}</option>`)].join("");
 
   area.innerHTML = `
+    ${teamSourceControl(event, competition)}
     <div class="note"><strong>${esc(competition.name)}</strong> — ${competition.teamSize} players per team, ${competition.countingScores} counting score${competition.countingScores === 1 ? "" : "s"}.</div>
 
     <h3>Unassigned Players</h3>
@@ -5445,7 +5582,7 @@ function renderTeamSetup(){
           <h3>${esc(team)} <span class="badge">${members.length}/${competition.teamSize}</span></h3>
           ${members.map(member => `
             <div class="team-member-row">
-              <span>${playerLink(member.playerId)}</span>
+              <span>${playerLink(member.playerId)} <span class="badge green">${playerStablefordTotal(event, competition, member)} pts</span></span>
               <button class="secondary" onclick="removePlayerFromTeam('${member.playerId}')">Remove</button>
             </div>
           `).join("") || `<p class="small">No players assigned yet.</p>`}
@@ -6012,6 +6149,11 @@ function autoAssignPrizes(){
   alert("Prizes applied successfully.");
 }
 
+
+
+
+
+
 function renderSetup(){
   const event = activeEvent();
   if(!event){
@@ -6120,51 +6262,56 @@ function renderScoreEntry(){
   }
   const competition = activeScoreCompetition();
   if(!competition){
-    area.innerHTML = `<div class="note">Add a competition in Event Setup first.</div>`;
+    area.innerHTML = `<div class="note">Add a singles scoring competition first. Doubles and trebles use the singles scores automatically.</div>`;
     return;
   }
+
   const query = $("scoreSearch").value.toLowerCase();
   const entrants = event.entrants.filter(entrant => playerName(entrant.playerId).toLowerCase().includes(query));
-  area.innerHTML = entrants.map(entrant => {
-    const score = scoreObject(competition, entrant.playerId);
-    const cb = countback(event, competition, entrant);
-    return `
-      <div class="score-card">
-        <div class="score-head">
-          <div>
-            <h3>${playerLink(entrant.playerId)}</h3>
-            <p class="small">Playing handicap: ${entrant.handicap} • Stableford: <strong>${cb.total}</strong>${competition.inputType === "stroke" ? ` • Gross: <strong>${playerGrossTotal(competition, entrant.playerId)}</strong>` : ""}</p>
+  area.innerHTML = `
+    <div class="linked-team-notice">
+      <strong>Score Entry:</strong> Enter player scores here once. Doubles, trebles and team leaderboards pull from these singles scores automatically.
+    </div>
+    ${entrants.map(entrant => {
+      const score = scoreObject(competition, entrant.playerId);
+      const cb = countback(event, competition, entrant);
+      return `
+        <div class="score-card">
+          <div class="score-head">
+            <div>
+              <h3>${playerLink(entrant.playerId)}</h3>
+              <p class="small">Playing handicap: ${entrant.handicap} • Stableford: <strong>${cb.total}</strong>${competition.inputType === "stroke" ? ` • Gross: <strong>${playerGrossTotal(competition, entrant.playerId)}</strong>` : ""}</p>
+            </div>
           </div>
-          ${competition.format !== "singles" ? `<div style="min-width:220px"><label>Team</label><input value="${esc(score.team)}" placeholder="Team / pair name" onchange="updateTeam('${entrant.playerId}',this.value)"></div>` : ""}
-        </div>
-        ${competition.inputType === "total" ? `
-          <div class="form-grid"><div><label>Total Stableford</label><input type="number" value="${esc(score.total)}" oninput="updateScore('${entrant.playerId}',0,this.value)"></div></div>
-        ` : `
-          <div class="holes">
-            ${Array.from({length:HOLES}, (_,i) => {
-              const value = competition.inputType === "stroke" ? score.gross[i] : score.stableford[i];
-              const course = courseForCompetition(event, competition);
-              const shots = strokesReceived(entrant.handicap, course.si[i]);
-              const pts = pointsArray(event, competition, entrant)[i];
-              return `
-                <div class="hole">
-                  <label>H${i+1}<br><small>Par ${course.par[i]} / SI ${course.si[i]}</small></label>
-                  <input type="number" inputmode="numeric" value="${esc(value)}" oninput="updateScore('${entrant.playerId}',${i},this.value)">
-                  <div class="pts">${competition.inputType === "stroke" ? `${shots} shot${shots === 1 ? "" : "s"} • ` : ""}${pts} pts</div>
-                </div>
-              `;
-            }).join("")}
+          ${competition.inputType === "total" ? `
+            <div class="form-grid"><div><label>Total Stableford</label><input type="number" value="${esc(score.total)}" oninput="updateScore('${entrant.playerId}',0,this.value)"></div></div>
+          ` : `
+            <div class="holes">
+              ${Array.from({length:HOLES}, (_,i) => {
+                const value = competition.inputType === "stroke" ? score.gross[i] : score.stableford[i];
+                const course = courseForCompetition(event, competition);
+                const shots = strokesReceived(entrant.handicap, course.si[i]);
+                const pts = pointsArray(event, competition, entrant)[i];
+                return `
+                  <div class="hole">
+                    <label>H${i+1}<br><small>Par ${course.par[i]} / SI ${course.si[i]}</small></label>
+                    <input type="number" inputmode="numeric" value="${esc(value)}" oninput="updateScore('${entrant.playerId}',${i},this.value)">
+                    <div class="pts">${competition.inputType === "stroke" ? `${shots} shot${shots === 1 ? "" : "s"} • ` : ""}${pts} pts</div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          `}
+          <div class="score-summary">
+            <div class="chip"><span>Total</span><strong>${cb.total}</strong></div>
+            <div class="chip"><span>Back 9</span><strong>${cb.back9}</strong></div>
+            <div class="chip"><span>Back 6</span><strong>${cb.back6}</strong></div>
+            <div class="chip"><span>Back 3</span><strong>${cb.back3}</strong></div>
           </div>
-        `}
-        <div class="score-summary">
-          <div class="chip"><span>Total</span><strong>${cb.total}</strong></div>
-          <div class="chip"><span>Back 9</span><strong>${cb.back9}</strong></div>
-          <div class="chip"><span>Back 6</span><strong>${cb.back6}</strong></div>
-          <div class="chip"><span>Back 3</span><strong>${cb.back3}</strong></div>
         </div>
-      </div>
-    `;
-  }).join("") || `<div class="note">No entrants found.</div>`;
+      `;
+    }).join("") || `<div class="note">No entrants found.</div>`}
+  `;
 }
 
 function competitionDisplayName(competition){
@@ -6356,7 +6503,10 @@ function fourballPlayerOptions(event){
 
 function fourballCompetitionOptions(event){
   if(!event) return "";
-  return event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)}</option>`).join("");
+  return event.competitions
+    .filter(comp => comp.format === "singles")
+    .map(comp => `<option value="${comp.id}">${esc(comp.name)}</option>`)
+    .join("");
 }
 
 function fourballScoringUrl(groupId){
@@ -6669,7 +6819,10 @@ function updateGroupScore(playerId, competitionId, holeIndex, value){
 
 function mobileCompetitionOptions(event){
   if(!event) return "";
-  return event.competitions.map(comp => `<option value="${comp.id}">${esc(comp.name)} (${esc(comp.format)})</option>`).join("");
+  return event.competitions
+    .filter(comp => comp.format === "singles")
+    .map(comp => `<option value="${comp.id}">${esc(comp.name)} (${esc(comp.format)})</option>`)
+    .join("");
 }
 
 function mobilePlayerOptions(event){
@@ -6843,8 +6996,8 @@ function renderMobileScoring(){
     return;
   }
 
-  if(!event.competitions.length){
-    area.innerHTML = `<div class="note">No competitions have been added to this event yet. Ask an admin to add the singles/team competitions first.</div>`;
+  if(!event.competitions.filter(comp => comp.format === "singles").length){
+    area.innerHTML = `<div class="note">No singles scoring competition has been added to this event yet. Ask an admin to add the singles competition first.</div>`;
     return;
   }
 
@@ -6936,35 +7089,40 @@ function renderResults(){
     return;
   }
 
-  const sorted = event.entrants.slice().sort(compareEntrants(event, competition));
-  let html = `
-    <h3>${esc(competition.name)} — Player Results</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Rank</th><th>Player</th><th>HCP</th><th>Stableford</th><th>Gross</th><th>Back 9</th><th>Back 6</th><th>Back 3</th><th>Back 1</th></tr></thead>
-        <tbody>
-          ${sorted.map((entrant,index) => {
-            const cb = countback(event, competition, entrant);
-            return `<tr><td class="rank">${index+1}</td><td>${playerLink(entrant.playerId)}</td><td>${entrant.handicap}</td><td><strong>${cb.total}</strong></td><td>${competition.inputType === "stroke" ? playerGrossTotal(competition, entrant.playerId) : "-"}</td><td>${cb.back9}</td><td>${cb.back6}</td><td>${cb.back3}</td><td>${cb.back1}</td></tr>`;
-          }).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
+  let html = "";
 
-  if(competition.format !== "singles"){
+  if(competition.format === "singles"){
+    const sorted = event.entrants.slice().sort(compareEntrants(event, competition));
     html += `
-      <h3>Team Results</h3>
+      <h3>${esc(competition.name)} — Player Results</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Rank</th><th>Team</th><th>Counting Players</th><th>Team Total</th></tr></thead>
+          <thead><tr><th>Rank</th><th>Player</th><th>HCP</th><th>Stableford</th><th>Gross</th><th>Back 9</th><th>Back 6</th><th>Back 3</th><th>Back 1</th></tr></thead>
           <tbody>
-            ${teamRows(event, competition).map((team,index) => `<tr><td class="rank">${index+1}</td><td>${esc(team.team)}</td><td>${team.counting.map(entrant => `${playerLink(entrant.playerId)} (${playerStablefordTotal(event, competition, entrant)})`).join(", ")}</td><td><strong>${team.total}</strong></td></tr>`).join("")}
+            ${sorted.map((entrant,index) => {
+              const cb = countback(event, competition, entrant);
+              return `<tr><td class="rank">${index+1}</td><td>${playerLink(entrant.playerId)}</td><td>${entrant.handicap}</td><td><strong>${cb.total}</strong></td><td>${competition.inputType === "stroke" ? playerGrossTotal(competition, entrant.playerId) : "-"}</td><td>${cb.back9}</td><td>${cb.back6}</td><td>${cb.back3}</td><td>${cb.back1}</td></tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }else{
+    const source = scoringSourceCompetition(event, competition);
+    html += teamSourceControl(event, competition);
+    html += `
+      <h3>${esc(competition.name)} — Team Results</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rank</th><th>Team</th><th>Counting Players</th><th>Source</th><th>Team Total</th></tr></thead>
+          <tbody>
+            ${teamRows(event, competition).filter(team => team.team !== "No Team").map((team,index) => `<tr><td class="rank">${index+1}</td><td>${esc(team.team)}</td><td>${team.counting.map(entrant => `${playerLink(entrant.playerId)} (${playerStablefordTotal(event, competition, entrant)})`).join(", ")}</td><td>${esc(source?.name || "Singles")}</td><td><strong>${team.total}</strong></td></tr>`).join("") || `<tr><td colspan="5" class="empty">No teams assigned yet.</td></tr>`}
           </tbody>
         </table>
       </div>
     `;
   }
+
   html += renderEventOverallResults(event);
   area.innerHTML = html;
 }
@@ -7579,7 +7737,7 @@ function openReportWindow(){
 function renderAll(doSave=true){
   if(!state.activeSeasonId && state.seasons[0]) state.activeSeasonId = state.seasons[0].id;
   if(!state.activeEventId && activeSeason()?.events[0]) state.activeEventId = activeSeason().events[0].id;
-  if(activeEvent()) ensureEventCourses(activeEvent());
+  if(activeEvent()) { ensureEventCourses(activeEvent()); ensureTeamSourceLinks(activeEvent()); }
   renderSelectors();
   renderDashboard();
   renderSeasons();
