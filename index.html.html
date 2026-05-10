@@ -2329,6 +2329,7 @@ body.readonly-mode #loginScreen button{
             This version is connected to Supabase. Changes are saved to the shared cloud state so everyone sees the same data.
             <div class="cloud-actions" style="margin-top:10px">
               <button class="secondary admin-only-action" onclick="loadCloudState(true)">Reload Cloud Data</button>
+              <button class="secondary admin-only-action" onclick="testCloudConnection()">Test Cloud</button>
               <button class="green admin-only-action" onclick="saveCloudState(true)">Save Current Data to Cloud</button>
             </div>
           </div>
@@ -2460,8 +2461,9 @@ body.readonly-mode #loginScreen button{
 
 <script>
 const SUPABASE_PROJECT_URL = "https://yojjcvdwvfspjngxmhjo.supabase.co";
-const SUPABASE_PUBLIC_KEY = "sb_publishable_ZLKFjwp8vLP8-c1JGOX7Xg_9u2k8t0V";
+const SUPABASE_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvampjdmR3dmZzcGpuZ3htaGpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMjg0NDUsImV4cCI6MTYzNTM4NDg0NDV9.HWuO_ymmkuaB2rcL3dMaA1zinHdlnK3nQhUYx8-jJkg";
 const CLOUD_STATE_KEY = "ardagh_shared_app_state";
+const CLOUD_AUTH_KEY = "ardagh_shared_auth_config";
 let cloudSaveTimer = null;
 let cloudReady = false;
 let cloudLoading = false;
@@ -2477,24 +2479,72 @@ function setCloudStatus(status, text){
 }
 
 async function supabaseRequest(path, options={}){
-  const response = await fetch(`${SUPABASE_PROJECT_URL}/rest/v1/${path}`, {
-    ...options,
-    headers: {
-      "apikey": SUPABASE_PUBLIC_KEY,
-      "Authorization": `Bearer ${SUPABASE_PUBLIC_KEY}`,
-      "Content-Type": "application/json",
-      "Prefer": "return=representation",
-      ...(options.headers || {})
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try{
+    const response = await fetch(`${SUPABASE_PROJECT_URL}/rest/v1/${path}`, {
+      ...options,
+      signal:controller.signal,
+      headers: {
+        "apikey": SUPABASE_PUBLIC_KEY,
+        "Authorization": `Bearer ${SUPABASE_PUBLIC_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+        ...(options.headers || {})
+      }
+    });
+
+    if(!response.ok){
+      const detail = await response.text().catch(() => "");
+      throw new Error(`Supabase error ${response.status}: ${detail}`);
     }
+
+    if(response.status === 204) return null;
+    return response.json();
+  }catch(error){
+    if(error.name === "AbortError"){
+      throw new Error("Cloud request timed out. Check the Supabase URL/API key and database access.");
+    }
+    throw error;
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+
+async function loadCloudAuthConfig(){
+  try{
+    const rows = await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(CLOUD_AUTH_KEY)}&select=value`);
+    if(rows && rows.length && rows[0].value && Array.isArray(rows[0].value.users)){
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(rows[0].value));
+      return rows[0].value;
+    }
+
+    const localConfig = getAuthConfig();
+    await saveCloudAuthConfig(localConfig);
+    return localConfig;
+  }catch(error){
+    console.error("Cloud auth load failed", error);
+    setCloudStatus("error", "Cloud auth error");
+    return getAuthConfig();
+  }
+}
+
+async function saveCloudAuthConfig(config){
+  const payload = {
+    key:CLOUD_AUTH_KEY,
+    value:config,
+    updated_at:new Date().toISOString()
+  };
+
+  await supabaseRequest("app_settings?on_conflict=key", {
+    method:"POST",
+    headers:{"Prefer":"resolution=merge-duplicates,return=representation"},
+    body:JSON.stringify(payload)
   });
 
-  if(!response.ok){
-    const detail = await response.text().catch(() => "");
-    throw new Error(`Supabase error ${response.status}: ${detail}`);
-  }
-
-  if(response.status === 204) return null;
-  return response.json();
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(config));
+  setCloudStatus("online", "Cloud synced");
 }
 
 function cleanStateForCloud(){
@@ -2650,7 +2700,7 @@ function addAppUser(){
   }
 
   config.users.push({id:uid("appuser"), username, password, role, mustChange:true});
-  setAuthConfig(config);
+  saveCloudAuthConfig(config).catch(error => alert("Cloud user save failed: " + error.message));
 
   $("newUserName").value = "";
   $("newUserPassword").value = "";
@@ -2669,7 +2719,7 @@ function updateAppUserRole(userId, role){
   }
 
   user.role = role;
-  setAuthConfig(config);
+  saveCloudAuthConfig(config).catch(error => alert("Cloud user save failed: " + error.message));
   renderUsersTable();
 }
 
@@ -2685,7 +2735,7 @@ function resetAppUserPassword(userId){
 
   user.password = newPassword;
   user.mustChange = true;
-  setAuthConfig(config);
+  saveCloudAuthConfig(config).catch(error => alert("Cloud user save failed: " + error.message));
   renderUsersTable();
 }
 
@@ -2705,7 +2755,7 @@ function deleteAppUser(userId){
 
   if(!confirm(`Delete user ${user.username}?`)) return;
   config.users = config.users.filter(u => u.id !== userId);
-  setAuthConfig(config);
+  saveCloudAuthConfig(config).catch(error => alert("Cloud user save failed: " + error.message));
   renderUsersTable();
 }
 
@@ -2786,13 +2836,18 @@ function lockApp(){
   setLoginError("");
 }
 
-function loginToApp(){
+async function loginToApp(){
+  setLoginError("");
+  setCloudStatus("saving", "Checking cloud login...");
+  await loadCloudAuthConfig();
+
   const config = getAuthConfig();
   const username = document.getElementById("loginUsername").value.trim();
   const password = document.getElementById("loginPassword").value;
 
   const user = config.users.find(u => u.username === username && u.password === password);
   if(!user){
+    setCloudStatus("online", "Cloud ready");
     setLoginError("Incorrect username or password.");
     return;
   }
@@ -2807,7 +2862,7 @@ function loginToApp(){
   unlockApp();
 }
 
-function changeInitialPassword(){
+async function changeInitialPassword(){
   const newPassword = document.getElementById("newPassword").value;
   const confirmPassword = document.getElementById("confirmPassword").value;
 
@@ -2837,8 +2892,16 @@ function changeInitialPassword(){
 
   user.password = newPassword;
   user.mustChange = false;
-  setAuthConfig(config);
-  unlockApp();
+
+  try{
+    setCloudStatus("saving", "Saving password...");
+    await saveCloudAuthConfig(config);
+    unlockApp();
+  }catch(error){
+    console.error(error);
+    setLoginError("Password could not be saved to cloud: " + error.message);
+    setCloudStatus("error", "Cloud auth save failed");
+  }
 }
 
 function logoutOfApp(){
@@ -6271,11 +6334,35 @@ if(document.readyState !== "loading"){
 }
 
 
+async function testCloudConnection(){
+  try{
+    setCloudStatus("saving", "Testing cloud...");
+    await supabaseRequest("app_settings?select=key&limit=1");
+    setCloudStatus("online", "Cloud test OK");
+    alert("Cloud connection is working.");
+  }catch(error){
+    console.error(error);
+    setCloudStatus("error", "Cloud test failed");
+    alert("Cloud test failed: " + error.message);
+  }
+}
+
 async function initialiseCloudSync(){
-  await loadCloudState(false);
-  setInterval(() => {
-    if(document.visibilityState === "visible") loadCloudState(false);
-  }, 60000);
+  setCloudStatus("saving", "Cloud connecting...");
+  try{
+    await loadCloudAuthConfig();
+    await loadCloudState(false);
+    setCloudStatus("online", "Cloud synced");
+  }catch(error){
+    console.error(error);
+    setCloudStatus("error", "Cloud connection failed");
+  }
+
+  if(!window.cloudRefreshTimer){
+    window.cloudRefreshTimer = setInterval(() => {
+      if(document.visibilityState === "visible") loadCloudState(false);
+    }, 60000);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initialiseCloudSync);
