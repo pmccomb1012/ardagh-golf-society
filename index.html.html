@@ -7725,7 +7725,7 @@ function renderTvMode(){
         </div>
         <div class="tv-title-centre">
           <h1>Live Event Leaderboard</h1>
-          <p>${esc(event.venue || event.name)}</p>
+          <p>${esc(event.name || event.venue || "Active Event")}</p>
         </div>
         <div class="tv-hero-meta">
           <span class="tv-meta-pill live">Live</span>
