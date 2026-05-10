@@ -1711,6 +1711,35 @@ body.readonly-mode #loginScreen button{
   .user-admin-grid{grid-template-columns:1fr}
 }
 
+
+/* v30 Supabase cloud sync */
+.cloud-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:7px 11px;
+  background:#fff;
+  color:var(--muted);
+  font-size:.8rem;
+  font-weight:900;
+}
+.cloud-dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#98a2b3;
+}
+.cloud-status.online .cloud-dot{background:#12b76a}
+.cloud-status.saving .cloud-dot{background:#f79009}
+.cloud-status.error .cloud-dot{background:#d92d20}
+.cloud-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -1767,6 +1796,7 @@ body.readonly-mode #loginScreen button{
 
   <main class="main"><div class="read-only-banner">View-only access: you can view results, tables and reports, but editing is restricted.</div>
     <div class="topbar">
+      <div id="cloudStatus" class="cloud-status"><span class="cloud-dot"></span><span id="cloudStatusText">Cloud connecting...</span></div>
       <div class="topbar-title">
         <strong id="pageTitle">Dashboard</strong>
         <span id="contextLine">No season selected</span>
@@ -2294,6 +2324,14 @@ body.readonly-mode #loginScreen button{
             Admin — full access including setup, scoring, prizes, imports and user management.<br>
             User — view-only access for dashboard, results, standings, reports, money tables, side comps, TV mode and player profiles.
           </div>
+          <div class="permission-note">
+            <strong>Cloud Sync:</strong><br>
+            This version is connected to Supabase. Changes are saved to the shared cloud state so everyone sees the same data.
+            <div class="cloud-actions" style="margin-top:10px">
+              <button class="secondary admin-only-action" onclick="loadCloudState(true)">Reload Cloud Data</button>
+              <button class="green admin-only-action" onclick="saveCloudState(true)">Save Current Data to Cloud</button>
+            </div>
+          </div>
 
           <div class="user-admin-grid">
             <div class="card flat">
@@ -2421,6 +2459,109 @@ body.readonly-mode #loginScreen button{
 </div>
 
 <script>
+const SUPABASE_PROJECT_URL = "https://yojjcvdwvfspjngxmhjo.supabase.co";
+const SUPABASE_PUBLIC_KEY = "sb_publishable_ZLKFjwp8vLP8-c1JGOX7Xg_9u2k8t0V";
+const CLOUD_STATE_KEY = "ardagh_shared_app_state";
+let cloudSaveTimer = null;
+let cloudReady = false;
+let cloudLoading = false;
+
+function setCloudStatus(status, text){
+  const box = document.getElementById("cloudStatus");
+  const label = document.getElementById("cloudStatusText");
+  if(box){
+    box.classList.remove("online","saving","error");
+    if(status) box.classList.add(status);
+  }
+  if(label) label.textContent = text;
+}
+
+async function supabaseRequest(path, options={}){
+  const response = await fetch(`${SUPABASE_PROJECT_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      "apikey": SUPABASE_PUBLIC_KEY,
+      "Authorization": `Bearer ${SUPABASE_PUBLIC_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation",
+      ...(options.headers || {})
+    }
+  });
+
+  if(!response.ok){
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Supabase error ${response.status}: ${detail}`);
+  }
+
+  if(response.status === 204) return null;
+  return response.json();
+}
+
+function cleanStateForCloud(){
+  const copy = JSON.parse(JSON.stringify(state));
+  delete copy.pendingImport;
+  return copy;
+}
+
+async function loadCloudState(showAlert=false){
+  if(cloudLoading) return;
+  cloudLoading = true;
+  setCloudStatus("saving", "Loading cloud data...");
+  try{
+    const rows = await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(CLOUD_STATE_KEY)}&select=value`);
+    if(rows && rows.length && rows[0].value){
+      state = rows[0].value;
+      cloudReady = true;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+      setCloudStatus("online", "Cloud synced");
+      if(showAlert) alert("Cloud data loaded.");
+    }else{
+      await saveCloudState(false);
+      cloudReady = true;
+      setCloudStatus("online", "Cloud initialised");
+      if(showAlert) alert("No cloud data existed, so the current app data was saved to cloud.");
+    }
+  }catch(error){
+    console.error(error);
+    setCloudStatus("error", "Cloud sync error");
+    if(showAlert) alert("Could not load cloud data: " + error.message);
+  }finally{
+    cloudLoading = false;
+  }
+}
+
+async function saveCloudState(showAlert=false){
+  if(!state || cloudLoading) return;
+  setCloudStatus("saving", "Saving to cloud...");
+  try{
+    const payload = {
+      key:CLOUD_STATE_KEY,
+      value:cleanStateForCloud(),
+      updated_at:new Date().toISOString()
+    };
+    await supabaseRequest("app_settings?on_conflict=key", {
+      method:"POST",
+      headers:{"Prefer":"resolution=merge-duplicates,return=representation"},
+      body:JSON.stringify(payload)
+    });
+    cloudReady = true;
+    setCloudStatus("online", "Cloud synced");
+    if(showAlert) alert("Current data saved to cloud.");
+  }catch(error){
+    console.error(error);
+    setCloudStatus("error", "Cloud save failed");
+    if(showAlert) alert("Could not save cloud data: " + error.message);
+  }
+}
+
+function queueCloudSave(){
+  if(!cloudReady || cloudLoading) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(() => saveCloudState(false), 700);
+}
+
+
 const AUTH_STORAGE_KEY = "ardagh_auth_v2";
 const DEFAULT_AUTH = {
   users:[
@@ -2829,6 +2970,7 @@ function selectedCourse(event){
 
 function save(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  queueCloudSave();
 }
 function load(){
   try{
@@ -6126,6 +6268,19 @@ boot();
 document.addEventListener("DOMContentLoaded", initialiseAuthGate);
 if(document.readyState !== "loading"){
   initialiseAuthGate();
+}
+
+
+async function initialiseCloudSync(){
+  await loadCloudState(false);
+  setInterval(() => {
+    if(document.visibilityState === "visible") loadCloudState(false);
+  }, 60000);
+}
+
+document.addEventListener("DOMContentLoaded", initialiseCloudSync);
+if(document.readyState !== "loading"){
+  initialiseCloudSync();
 }
 </script>
 </body>
