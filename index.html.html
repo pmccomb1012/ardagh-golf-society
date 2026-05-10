@@ -2328,9 +2328,9 @@ body.readonly-mode #loginScreen button{
             <strong>Cloud Sync:</strong><br>
             This version is connected to Supabase. Changes are saved to the shared cloud state so everyone sees the same data.
             <div class="cloud-actions" style="margin-top:10px">
-              <button class="secondary admin-only-action" onclick="loadCloudState(true)">Reload Cloud Data</button>
+              <button class="secondary admin-only-action" onclick="loadCloudState(true)">Reload Latest Cloud Data</button>
               <button class="secondary admin-only-action" onclick="testCloudConnection()">Test Cloud</button>
-              <button class="green admin-only-action" onclick="saveCloudState(true)">Save Current Data to Cloud</button>
+              <button class="green admin-only-action" onclick="saveCloudState(true)">Force Save This Device to Cloud</button>
             </div>
           </div>
 
@@ -2467,6 +2467,7 @@ const CLOUD_AUTH_KEY = "ardagh_shared_auth_config";
 let cloudSaveTimer = null;
 let cloudReady = false;
 let cloudLoading = false;
+let pendingCloudSave = false;
 
 function setCloudStatus(status, text){
   const box = document.getElementById("cloudStatus");
@@ -2564,11 +2565,11 @@ async function loadCloudState(showAlert=false){
       cloudReady = true;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       renderAll();
-      setCloudStatus("online", "Cloud synced");
+      setCloudStatus("online", `Cloud loaded ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"})}`);
       if(showAlert) alert("Cloud data loaded.");
     }else{
-      await saveCloudState(false);
       cloudReady = true;
+      await saveCloudState(false);
       setCloudStatus("online", "Cloud initialised");
       if(showAlert) alert("No cloud data existed, so the current app data was saved to cloud.");
     }
@@ -2578,6 +2579,9 @@ async function loadCloudState(showAlert=false){
     if(showAlert) alert("Could not load cloud data: " + error.message);
   }finally{
     cloudLoading = false;
+    if(pendingCloudSave && cloudReady){
+      setTimeout(() => saveCloudState(false), 300);
+    }
   }
 }
 
@@ -2585,6 +2589,9 @@ async function saveCloudState(showAlert=false){
   if(!state || cloudLoading) return;
   setCloudStatus("saving", "Saving to cloud...");
   try{
+    state.cloudUpdatedAt = new Date().toISOString();
+    state.cloudUpdatedBy = getCurrentUser()?.username || "unknown";
+
     const payload = {
       key:CLOUD_STATE_KEY,
       value:cleanStateForCloud(),
@@ -2596,19 +2603,24 @@ async function saveCloudState(showAlert=false){
       body:JSON.stringify(payload)
     });
     cloudReady = true;
-    setCloudStatus("online", "Cloud synced");
+    pendingCloudSave = false;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setCloudStatus("online", `Cloud synced ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"})}`);
     if(showAlert) alert("Current data saved to cloud.");
   }catch(error){
     console.error(error);
+    pendingCloudSave = true;
     setCloudStatus("error", "Cloud save failed");
     if(showAlert) alert("Could not save cloud data: " + error.message);
   }
 }
 
 function queueCloudSave(){
+  pendingCloudSave = true;
   if(!cloudReady || cloudLoading) return;
+
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(() => saveCloudState(false), 700);
+  cloudSaveTimer = setTimeout(() => saveCloudState(false), 500);
 }
 
 
@@ -4191,7 +4203,7 @@ function importScoreObject(pointsArray, teamName){
   };
 }
 
-function confirmEventImport(){
+async function confirmEventImport(){
   const data = state.pendingImport;
   if(!data){
     alert("Upload and preview a JSON file first.");
@@ -4274,9 +4286,10 @@ function confirmEventImport(){
   state.pendingImport = null;
 
   save();
+  await saveCloudState(true);
   renderAll();
   showView("results");
-  alert("Event imported successfully.");
+  alert("Event imported successfully and saved to cloud.");
 }
 
 function clearImportPreview(){
@@ -6352,6 +6365,7 @@ async function initialiseCloudSync(){
   try{
     await loadCloudAuthConfig();
     await loadCloudState(false);
+    if(pendingCloudSave) await saveCloudState(false);
     setCloudStatus("online", "Cloud synced");
   }catch(error){
     console.error(error);
@@ -6360,7 +6374,7 @@ async function initialiseCloudSync(){
 
   if(!window.cloudRefreshTimer){
     window.cloudRefreshTimer = setInterval(() => {
-      if(document.visibilityState === "visible") loadCloudState(false);
+      if(document.visibilityState === "visible" && !pendingCloudSave) loadCloudState(false);
     }, 60000);
   }
 }
