@@ -1935,6 +1935,260 @@ body.readonly-mode #mobilescoring button{
   margin-top:8px;
 }
 
+
+/* v37 sleek mobile scoring experience */
+.mobile-score-shell{
+  max-width:760px!important;
+}
+.score-app-mode{
+  background:#07172d;
+  min-height:100vh;
+}
+.score-app-mode .sidebar,
+.score-app-mode .topbar,
+.score-app-mode .view:not(#mobilescoring){
+  display:none!important;
+}
+.score-app-mode .app{
+  display:block!important;
+}
+.score-app-mode .main,
+.score-app-mode .content{
+  padding:0!important;
+  margin:0!important;
+  max-width:none!important;
+}
+.score-app-mode #mobilescoring{
+  display:block!important;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top right,rgba(21,94,239,.32),transparent 28rem),
+    linear-gradient(180deg,#06172c,#0b1f3f 45%,#f3f6fb 45%);
+  padding:0!important;
+}
+.score-app-top{
+  color:#fff;
+  padding:18px 16px 12px;
+}
+.score-app-top h2{
+  color:#fff;
+  margin:0;
+  font-size:1.35rem;
+  letter-spacing:-.02em;
+}
+.score-app-top p{
+  color:#d9e7ff;
+  margin:4px 0 0;
+  font-size:.9rem;
+}
+.score-live-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  border-radius:999px;
+  background:rgba(18,183,106,.18);
+  color:#d1fadf;
+  border:1px solid rgba(18,183,106,.35);
+  padding:6px 10px;
+  font-weight:950;
+  font-size:.78rem;
+  margin-top:10px;
+}
+.score-live-pill:before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#12b76a;
+}
+.score-card-pro{
+  margin:12px;
+  background:#fff;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:26px;
+  box-shadow:0 22px 52px rgba(6,23,44,.22);
+  overflow:hidden;
+}
+.score-card-head-pro{
+  background:linear-gradient(135deg,#ffffff,#f7faff);
+  padding:16px;
+  border-bottom:1px solid #e7ecf5;
+}
+.score-card-head-pro h3{
+  margin:0;
+  color:#06172c;
+  font-size:1.25rem;
+}
+.score-card-head-pro p{
+  margin:4px 0 0;
+  color:#667085;
+}
+.score-tabs-pro{
+  display:flex;
+  gap:8px;
+  overflow:auto;
+  padding:12px;
+  background:#f8fafc;
+  border-bottom:1px solid #e7ecf5;
+  -webkit-overflow-scrolling:touch;
+}
+.score-tabs-pro button{
+  flex:0 0 auto;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #d8dee9;
+  color:#344054;
+  box-shadow:none;
+  padding:10px 13px;
+  font-size:.86rem;
+}
+.score-tabs-pro button.active{
+  background:#155eef;
+  color:#fff;
+  border-color:#155eef;
+}
+.score-player-summary{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:12px 16px 0;
+}
+.score-summary-tile{
+  border:1px solid #e4e7ec;
+  border-radius:16px;
+  background:#f8fafc;
+  padding:11px;
+}
+.score-summary-tile span{
+  display:block;
+  color:#667085;
+  font-size:.68rem;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.score-summary-tile strong{
+  display:block;
+  color:#06172c;
+  font-size:1.45rem;
+  line-height:1;
+  margin-top:4px;
+}
+.score-hole-list{
+  display:grid;
+  gap:10px;
+  padding:14px 12px 18px;
+}
+.score-hole-row{
+  display:grid;
+  grid-template-columns:58px 1fr 124px;
+  gap:10px;
+  align-items:center;
+  border:1px solid #e4e7ec;
+  background:#fff;
+  border-radius:18px;
+  padding:10px;
+}
+.score-hole-number{
+  width:46px;
+  height:46px;
+  border-radius:15px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:#06172c;
+  color:#fff;
+  font-weight:950;
+}
+.score-hole-number small{
+  color:#d9e7ff;
+  font-size:.58rem;
+  text-transform:uppercase;
+}
+.score-hole-info strong{
+  display:block;
+  color:#06172c;
+}
+.score-hole-info small{
+  display:block;
+  color:#667085;
+  margin-top:2px;
+}
+.score-stepper{
+  display:grid;
+  grid-template-columns:36px 1fr 36px;
+  gap:6px;
+  align-items:center;
+}
+.score-stepper button{
+  height:38px;
+  min-width:0;
+  padding:0;
+  border-radius:12px;
+  box-shadow:none;
+  background:#eef4ff;
+  color:#155eef;
+}
+.score-stepper input{
+  height:42px;
+  text-align:center;
+  font-size:1.15rem;
+  font-weight:950;
+  padding:4px;
+  border-radius:12px;
+}
+.score-save-toast{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  z-index:999999;
+  background:#06172c;
+  color:#fff;
+  border-radius:999px;
+  padding:10px 14px;
+  font-weight:900;
+  box-shadow:0 12px 30px rgba(0,0,0,.28);
+  display:none;
+}
+.score-save-toast.show{display:block}
+.score-footer-actions{
+  position:sticky;
+  bottom:0;
+  display:flex;
+  gap:10px;
+  padding:12px;
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(10px);
+  border-top:1px solid #e7ecf5;
+}
+.score-footer-actions button{
+  flex:1;
+  border-radius:16px;
+  min-height:48px;
+}
+@media(max-width:520px){
+  .mobile-score-shell{max-width:none!important}
+  .score-card-pro{margin:10px 8px;border-radius:22px}
+  .score-hole-row{
+    grid-template-columns:48px 1fr 116px;
+    gap:8px;
+    padding:8px;
+  }
+  .score-hole-number{
+    width:42px;
+    height:42px;
+    border-radius:13px;
+  }
+  .score-stepper{
+    grid-template-columns:32px 1fr 32px;
+    gap:5px;
+  }
+  .score-stepper button{height:36px}
+  .score-stepper input{height:40px}
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -6034,28 +6288,74 @@ function activeScoreGroup(){
   return event?.fourballs?.find(g => g.id === groupId) || null;
 }
 
+
+function isScoreAppLink(){
+  return new URLSearchParams(window.location.search).has("scoreGroup");
+}
+
+function applyScoreAppMode(){
+  document.body.classList.toggle("score-app-mode", isScoreAppLink());
+}
+
+function showScoreToast(text="Saved live"){
+  const toast = $("scoreSaveToast");
+  if(!toast) return;
+  toast.textContent = text;
+  toast.classList.add("show");
+  clearTimeout(window.scoreToastTimer);
+  window.scoreToastTimer = setTimeout(() => toast.classList.remove("show"), 1200);
+}
+
+function stepScore(playerId, competitionId, holeIndex, delta){
+  const event = activeEvent();
+  const competition = competitionById(event, competitionId);
+  if(!competition) return;
+  const score = scoreObject(competition, playerId);
+  const arr = competition.inputType === "stroke" ? score.gross : score.stableford;
+  const current = n(arr[holeIndex]);
+  const next = Math.max(0, current + delta);
+  updateGroupScore(playerId, competitionId, holeIndex, next);
+  const input = document.querySelector(`[data-score-input="${playerId}_${holeIndex}"]`);
+  if(input) input.value = next;
+}
+
+function renderScoreAppTop(title, subtitle){
+  return `
+    <div class="score-app-top">
+      <h2>${esc(title)}</h2>
+      <p>${esc(subtitle)}</p>
+      <div class="score-live-pill">Live scoring enabled</div>
+    </div>
+  `;
+}
+
 function renderGroupScoring(group){
   const event = activeEvent();
   const competition = competitionById(event, group.competitionId);
   if(!event || !competition) return `<div class="note">This scoring link is not valid for the active event.</div>`;
 
   return `
-    <div class="mobile-score-card">
-      <div class="mobile-score-head">
+    ${renderScoreAppTop(group.name, `${competition.name} • Score all players in this group`)}
+    <div class="score-card-pro">
+      <div class="score-card-head-pro">
         <h3>${esc(group.name)}</h3>
-        <p>${esc(competition.name)} • Score all players in this group</p>
+        <p>${esc(group.playerIds.map(playerName).join(" • "))}</p>
       </div>
-      <div class="group-score-tabs">
-        ${group.playerIds.map((pid,idx) => `<button class="group-score-tab ${idx===0 ? "active" : ""}" onclick="showGroupPlayer('${pid}')">${esc(playerName(pid))}</button>`).join("")}
+      <div class="score-tabs-pro">
+        ${group.playerIds.map((pid,idx) => `<button class="${idx===0 ? "active" : ""}" onclick="showGroupPlayer('${pid}')">${esc(playerName(pid))}</button>`).join("")}
       </div>
       ${group.playerIds.map((pid,idx) => renderGroupPlayerScorePanel(event, competition, pid, idx===0)).join("")}
+      <div class="score-footer-actions">
+        <button class="green" onclick="saveCloudState(true)">Save Now</button>
+        <button class="secondary" onclick="submitGroupCards('${group.id}')">Submit Group</button>
+      </div>
     </div>
   `;
 }
 
 function showGroupPlayer(playerId){
   document.querySelectorAll(".group-player-panel").forEach(el => el.classList.toggle("active", el.dataset.playerId === playerId));
-  document.querySelectorAll(".group-score-tab").forEach(btn => btn.classList.toggle("active", btn.textContent.trim() === playerName(playerId)));
+  document.querySelectorAll(".score-tabs-pro button").forEach(btn => btn.classList.toggle("active", btn.textContent.trim() === playerName(playerId)));
 }
 
 function renderGroupPlayerScorePanel(event, competition, playerId, active=false){
@@ -6064,30 +6364,38 @@ function renderGroupPlayerScorePanel(event, competition, playerId, active=false)
   const score = scoreObject(competition, playerId);
   const course = courseForCompetition(event, competition);
 
-  const inputs = Array.from({length:HOLES}, (_,i) => {
+  const rows = Array.from({length:HOLES}, (_,i) => {
     const value = competition.inputType === "stroke" ? (score.gross[i] || "") : (score.stableford[i] || "");
-    const label = competition.inputType === "stroke" ? "Gross" : "Points";
+    const label = competition.inputType === "stroke" ? "Gross" : "Stableford";
     const calculated = competition.inputType === "stroke"
-      ? `Pts: ${pointsArray(event, competition, entrant)[i] || 0}`
-      : `Par ${course.par[i]} / SI ${course.si[i]}`;
+      ? `Stableford: ${pointsArray(event, competition, entrant)[i] || 0}`
+      : `Par ${course.par[i]} • SI ${course.si[i]}`;
 
     return `
-      <div class="mobile-hole">
-        <strong>Hole ${i+1}</strong>
-        <small>${label} • ${calculated}</small>
-        <input inputmode="numeric" type="number" value="${value}" oninput="updateGroupScore('${playerId}','${competition.id}',${i},this.value)">
+      <div class="score-hole-row">
+        <div class="score-hole-number"><small>Hole</small>${i+1}</div>
+        <div class="score-hole-info">
+          <strong>${label}</strong>
+          <small>${calculated}</small>
+        </div>
+        <div class="score-stepper">
+          <button type="button" onclick="stepScore('${playerId}','${competition.id}',${i},-1)">−</button>
+          <input data-score-input="${playerId}_${i}" inputmode="numeric" type="number" value="${value}" oninput="updateGroupScore('${playerId}','${competition.id}',${i},this.value)">
+          <button type="button" onclick="stepScore('${playerId}','${competition.id}',${i},1)">+</button>
+        </div>
       </div>
     `;
   }).join("");
 
   return `
     <div class="group-player-panel ${active ? "active" : ""}" data-player-id="${playerId}">
-      <div style="padding:0 16px 10px"><h3>${esc(playerName(playerId))}</h3></div>
-      <div class="mobile-hole-grid">${inputs}</div>
-      <div class="mobile-score-summary">
-        <div class="mobile-score-total"><span>Stableford</span><strong id="groupTotal_${playerId}">${playerStablefordTotal(event, competition, entrant)}</strong></div>
-        <div class="mobile-score-total"><span>Gross</span><strong id="groupGross_${playerId}">${competition.inputType === "stroke" ? playerGrossTotal(competition, playerId) : "-"}</strong></div>
+      <div class="score-player-summary">
+        <div class="score-summary-tile"><span>Player</span><strong style="font-size:1rem">${esc(playerName(playerId))}</strong></div>
+        <div class="score-summary-tile"><span>Handicap</span><strong>${entrant.handicap}</strong></div>
+        <div class="score-summary-tile"><span>Stableford</span><strong id="groupTotal_${playerId}">${playerStablefordTotal(event, competition, entrant)}</strong></div>
+        <div class="score-summary-tile"><span>Gross</span><strong id="groupGross_${playerId}">${competition.inputType === "stroke" ? playerGrossTotal(competition, playerId) : "-"}</strong></div>
       </div>
+      <div class="score-hole-list">${rows}</div>
     </div>
   `;
 }
@@ -6098,10 +6406,13 @@ function updateGroupScore(playerId, competitionId, holeIndex, value){
   const competition = competitionById(event, competitionId);
   const entrant = event?.entrants.find(en => en.playerId === playerId);
   if(!event || !competition || !entrant) return;
+
   const totalEl = $(`groupTotal_${playerId}`);
   const grossEl = $(`groupGross_${playerId}`);
   if(totalEl) totalEl.textContent = playerStablefordTotal(event, competition, entrant);
   if(grossEl) grossEl.textContent = competition.inputType === "stroke" ? playerGrossTotal(competition, playerId) : "-";
+
+  showScoreToast("Saved live");
 }
 
 function mobileCompetitionOptions(event){
@@ -6170,6 +6481,7 @@ function updateMobileScore(playerId, competitionId, holeIndex, value){
 
   save();
   updateMobileScoreSummary();
+  showScoreToast("Saved live");
 }
 
 function updateMobileScoreSummary(){
@@ -6184,6 +6496,27 @@ function updateMobileScoreSummary(){
   if($("mobileScoreTotal")) $("mobileScoreTotal").textContent = total;
   if($("mobileScoreGross")) $("mobileScoreGross").textContent = gross;
   if($("mobileScoreStatus")) $("mobileScoreStatus").textContent = `Saving live for ${playerName(entrant.playerId)} - ${competition.name}`;
+}
+
+
+function submitGroupCards(groupId){
+  const event = activeEvent();
+  const group = event?.fourballs?.find(g => g.id === groupId);
+  if(!event || !group) return;
+  const competition = competitionById(event, group.competitionId);
+  if(!competition) return;
+
+  group.playerIds.forEach(playerId => {
+    const score = scoreObject(competition, playerId);
+    score.submitted = true;
+    score.submittedAt = new Date().toISOString();
+    score.submittedBy = getCurrentUser()?.username || "fourball scorer";
+  });
+
+  save();
+  saveCloudState(true);
+  showScoreToast("Group submitted");
+  alert("Group scorecards submitted and saved live.");
 }
 
 function submitMobileScorecard(){
@@ -6214,6 +6547,7 @@ function unlockMobileScorecard(){
 }
 
 function renderMobileScoring(){
+  applyScoreAppMode();
   const group = activeScoreGroup();
   if(group){
     const area = $("mobileScoreArea");
@@ -6851,7 +7185,8 @@ function openReportWindow(){
         <span>Choose “Save as PDF”. Enable background graphics for the header.</span>
       </div>
       ${$("reportArea").innerHTML}
-    </body>
+    <div id="scoreSaveToast" class="score-save-toast">Saved live</div>
+</body>
     </html>
   `;
 
@@ -7058,7 +7393,7 @@ async function initialiseCloudSync(){
   }
 }
 
-document.addEventListener("DOMContentLoaded", initialiseCloudSync);
+document.addEventListener("DOMContentLoaded", () => { applyScoreAppMode(); initialiseCloudSync(); });
 if(document.readyState !== "loading"){
   initialiseCloudSync();
 }
