@@ -2716,6 +2716,139 @@ body.readonly-mode #fourballs .admin-only-action{
   .tv-rank-pro{width:48px;height:48px;border-radius:16px}
 }
 
+
+/* v46 TV leaderboard: true side-by-side readable layout */
+.tv-mode-pro{
+  padding:22px!important;
+  overflow:hidden!important;
+}
+.tv-hero{
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:16px!important;
+  align-items:center!important;
+  margin-bottom:16px!important;
+  padding-bottom:12px!important;
+}
+.tv-hero h1{
+  font-size:clamp(1.8rem,2.7vw,3.5rem)!important;
+  line-height:1!important;
+  max-width:none!important;
+}
+.tv-hero p{
+  margin-top:5px!important;
+  font-size:clamp(.9rem,1vw,1.15rem)!important;
+}
+.tv-hero-meta{
+  gap:7px!important;
+  max-width:430px!important;
+}
+.tv-meta-pill{
+  padding:7px 10px!important;
+  font-size:.78rem!important;
+}
+.tv-meta-pill.live:before{
+  width:8px!important;
+  height:8px!important;
+}
+.tv-showcase{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:18px!important;
+  align-items:start!important;
+}
+.tv-section{
+  min-width:0!important;
+  gap:10px!important;
+}
+.tv-section-title{
+  padding:10px 14px!important;
+  border-radius:16px!important;
+  margin:0!important;
+  box-shadow:none!important;
+}
+.tv-section-title h2{
+  font-size:1.25rem!important;
+  letter-spacing:.01em!important;
+}
+.tv-section-title span{
+  font-size:.78rem!important;
+}
+.tv-section-board-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:10px!important;
+}
+.tv-card-pro{
+  border-radius:18px!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.22)!important;
+}
+.tv-card-head{
+  padding:10px 14px!important;
+}
+.tv-card-head h3{
+  font-size:1.05rem!important;
+  line-height:1.1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.tv-card-head p{
+  margin-top:3px!important;
+  font-size:.72rem!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.tv-row-pro{
+  grid-template-columns:38px minmax(0,1fr) 66px!important;
+  gap:9px!important;
+  padding:8px 12px!important;
+  min-height:48px!important;
+}
+.tv-rank-pro{
+  width:30px!important;
+  height:30px!important;
+  border-radius:10px!important;
+  font-size:.9rem!important;
+}
+.tv-name-pro strong{
+  font-size:.92rem!important;
+  line-height:1.12!important;
+}
+.tv-name-pro small{
+  font-size:.64rem!important;
+  margin-top:2px!important;
+  font-weight:750!important;
+}
+.tv-score-pro{
+  font-size:1.45rem!important;
+  letter-spacing:-.035em!important;
+}
+.tv-empty-pro{
+  padding:16px!important;
+  font-size:.9rem!important;
+}
+.tv-overall-strip{
+  margin-top:14px!important;
+  gap:10px!important;
+}
+.tv-overall-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+@media(max-width:1000px){
+  .tv-showcase{grid-template-columns:1fr!important;overflow:auto!important}
+  .tv-overall-grid{grid-template-columns:1fr!important}
+}
+@media(min-width:1400px){
+  .tv-mode-pro{padding:26px!important}
+  .tv-showcase{gap:22px!important}
+  .tv-row-pro{padding:9px 14px!important;min-height:52px!important}
+  .tv-name-pro strong{font-size:1rem!important}
+  .tv-score-pro{font-size:1.6rem!important}
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -7670,8 +7803,8 @@ function renderTvMode(){
 
         <section class="tv-section">
           <div class="tv-section-title">
-            <h2>Team Events</h2>
-            <span>${teamComps.length ? "Doubles / Trebles" : "No team event"}</span>
+            <h2>Doubles</h2>
+            <span>${teamComps.length ? "Team leaderboard" : "No doubles"}</span>
           </div>
           <div class="tv-section-board-grid">${teamBoards || `<div class="tv-empty-pro">No doubles or trebles competitions for this event.</div>`}</div>
         </section>
