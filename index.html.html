@@ -2330,6 +2330,28 @@ body.readonly-mode #mobilescoring button{
   text-align:right;
 }
 
+
+/* v40 permissions fix for live scoring users */
+body.readonly-mode #mobilescoring,
+body.readonly-mode #fourballs{
+  pointer-events:auto!important;
+}
+body.readonly-mode #mobilescoring input,
+body.readonly-mode #mobilescoring select,
+body.readonly-mode #mobilescoring textarea,
+body.readonly-mode #mobilescoring button,
+body.readonly-mode #fourballs input,
+body.readonly-mode #fourballs select,
+body.readonly-mode #fourballs textarea,
+body.readonly-mode #fourballs button{
+  pointer-events:auto!important;
+  opacity:1!important;
+}
+body.readonly-mode #fourballs .admin-only-action{
+  pointer-events:none!important;
+  opacity:.55!important;
+}
+
 </style>
 </head>
 <body class="auth-locked auth-locked">
@@ -3372,8 +3394,9 @@ function applyRolePermissions(){
     }
   });
 
+  // Standard users must be able to enter live scores, but not access admin setup areas.
   if(!isAdmin && !VIEW_ONLY_ALLOWED.has(state?.currentView || "dashboard")){
-    showView("dashboard");
+    showView("mobilescoring");
   }
 
   renderUsersTable();
@@ -6671,21 +6694,29 @@ function selectedMobileEntrant(){
 
 function renderMobileScoringSelectors(){
   const event = activeEvent();
-  if(!event) return;
-
   const compSelect = $("mobileScoreCompetition");
   const playerSelect = $("mobileScorePlayer");
+
+  if(!event){
+    if(compSelect) compSelect.innerHTML = "";
+    if(playerSelect) playerSelect.innerHTML = "";
+    return;
+  }
 
   if(compSelect){
     const current = compSelect.value;
     compSelect.innerHTML = mobileCompetitionOptions(event);
-    compSelect.value = current || event.competitions[0]?.id || "";
+    compSelect.value = current && event.competitions.some(comp => comp.id === current)
+      ? current
+      : (event.competitions[0]?.id || "");
   }
 
   if(playerSelect){
     const current = playerSelect.value;
     playerSelect.innerHTML = mobilePlayerOptions(event);
-    playerSelect.value = current || event.entrants[0]?.playerId || "";
+    playerSelect.value = current && event.entrants.some(en => en.playerId === current)
+      ? current
+      : (event.entrants[0]?.playerId || "");
   }
 }
 
@@ -6807,8 +6838,23 @@ function renderMobileScoring(){
 
   if(!area) return;
 
-  if(!event || !competition || !entrant){
-    area.innerHTML = `<div class="note">Set up an event, competition and players first.</div>`;
+  if(!event){
+    area.innerHTML = `<div class="note">No active event has been selected. Ask an admin to set the active event.</div>`;
+    return;
+  }
+
+  if(!event.competitions.length){
+    area.innerHTML = `<div class="note">No competitions have been added to this event yet. Ask an admin to add the singles/team competitions first.</div>`;
+    return;
+  }
+
+  if(!event.entrants.length){
+    area.innerHTML = `<div class="note">No players have been added to this event yet. Ask an admin to add entrants first.</div>`;
+    return;
+  }
+
+  if(!competition || !entrant){
+    area.innerHTML = `<div class="note">Select a competition and player to start scoring.</div>`;
     return;
   }
 
