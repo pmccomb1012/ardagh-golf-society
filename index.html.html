@@ -3432,15 +3432,6 @@ body.readonly-mode #fourballs .admin-only-action{
       </section>
 
       <section id="tv" class="view tv-fullscreen-view">
-        <div class="tv-popout-toolbar">
-          <div>
-            <strong>TV Leaderboard link</strong>
-            <span>Open this on a TV or copy the direct link.</span>
-          </div>
-          <input id="tvPopoutUrl" readonly aria-label="TV leaderboard pop-out link">
-          <button class="green" onclick="openTvPopout()">Pop Out TV Leaderboard</button>
-          <button class="ghost" onclick="copyTvPopoutLink()">Copy Link</button>
-        </div>
         <div id="tvCombined"></div>
         <div id="tvEvent" style="display:none"></div>
       </section>
@@ -4331,54 +4322,6 @@ function showView(view){
   state.currentView = view;
   document.querySelectorAll(".view").forEach(el => el.classList.toggle("active", el.id === view));
   document.querySelectorAll("[data-view]").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
-  renderAll();
-}
-
-function tvPopoutUrl(){
-  const url = new URL(window.location.href);
-  url.searchParams.set("tv", "1");
-  url.hash = "tv";
-  return url.toString();
-}
-
-function refreshTvPopoutLink(){
-  const input = $("tvPopoutUrl");
-  if(input) input.value = tvPopoutUrl();
-}
-
-function openTvPopout(){
-  const popup = window.open(tvPopoutUrl(), "ardaghTvLeaderboard", "noopener,noreferrer");
-  if(!popup){
-    alert("Pop-up blocked. Use Copy Link and open it in the TV browser instead.");
-  }
-}
-
-async function copyTvPopoutLink(){
-  const link = tvPopoutUrl();
-  try{
-    await navigator.clipboard.writeText(link);
-    alert("TV leaderboard link copied.");
-  }catch(error){
-    const input = $("tvPopoutUrl");
-    if(input){
-      input.value = link;
-      input.focus();
-      input.select();
-    }
-    alert("Copy was blocked by the browser. The link is selected for you to copy manually.");
-  }
-}
-
-function isTvPopoutMode(){
-  const params = new URLSearchParams(window.location.search);
-  return params.get("tv") === "1" || params.get("view") === "tv";
-}
-
-function enterTvPopoutMode(){
-  document.body.classList.add("tv-popout-mode");
-  state.currentView = "tv";
-  document.querySelectorAll(".view").forEach(el => el.classList.toggle("active", el.id === "tv"));
-  document.querySelectorAll("[data-view]").forEach(btn => btn.classList.toggle("active", btn.dataset.view === "tv"));
   renderAll();
 }
 
@@ -7707,7 +7650,6 @@ function renderCheckin(){
 }
 
 function renderTvMode(){
-  refreshTvPopoutLink();
   if(!$('tvCombined')) return;
   const event = activeEvent();
 
@@ -8384,10 +8326,6 @@ function boot(){
     state.activeSeasonId = season.id;
   }
   renderAll();
-  refreshTvPopoutLink();
-  if(isTvPopoutMode()){
-    enterTvPopoutMode();
-  }
 }
 boot();
 
